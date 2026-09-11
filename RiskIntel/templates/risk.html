@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}AI Multi-Hazard Risk Prediction Engine{% endblock %}
+{% block header_title %}AI Multi-Hazard Predictive Risk Engine{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <!-- INTERACTIVE PREDICTION INPUT FORM -->
+    <div class="col-lg-7">
+        <div class="risk-card">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-sliders text-primary"></i>
+                    <span>INTERACTIVE ENVIRONMENTAL RISK CALCULATOR</span>
+                </div>
+                <span class="badge bg-dark border border-secondary text-info">Random Forest Regressor</span>
+            </div>
+
+            <form id="risk-calc-form" onsubmit="calculateRiskFromForm(event)">
+                <div class="mb-3">
+                    <label class="form-label text-secondary" style="font-size: 0.75rem;">SELECT TARGET GLACIAL LAKE</label>
+                    <select name="lake_id" class="form-select form-select-risk">
+                        {% for l in lakes %}
+                        <option value="{{ l.id }}">{{ l.name }} — {{ l.location }} (Current Risk: {{ l.risk_score }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label d-flex justify-content-between text-secondary" style="font-size: 0.75rem;">
+                            <span>WATER LEVEL DEPTH</span>
+                            <span class="text-white fw-bold" id="val-wl">85.0 m</span>
+                        </label>
+                        <input type="range" class="form-range" name="water_level" min="40" max="160" step="0.5" value="85.0" 
+                               oninput="document.getElementById('val-wl').innerText = this.value + ' m'">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label d-flex justify-content-between text-secondary" style="font-size: 0.75rem;">
+                            <span>24H WATER LEVEL CHANGE</span>
+                            <span class="text-white fw-bold" id="val-wlc">+1.5 m</span>
+                        </label>
+                        <input type="range" class="form-range" name="water_level_change" min="-2" max="8" step="0.1" value="1.5"
+                               oninput="document.getElementById('val-wlc').innerText = (this.value >= 0 ? '+' : '') + this.value + ' m'">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label d-flex justify-content-between text-secondary" style="font-size: 0.75rem;">
+                            <span>24H ACCUMULATED RAINFALL</span>
+                            <span class="text-white fw-bold" id="val-rf">75.0 mm</span>
+                        </label>
+                        <input type="range" class="form-range" name="rainfall" min="0" max="220" step="1" value="75.0"
+                               oninput="document.getElementById('val-rf').innerText = this.value + ' mm'">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label d-flex justify-content-between text-secondary" style="font-size: 0.75rem;">
+                            <span>AMBIENT TEMPERATURE</span>
+                            <span class="text-white fw-bold" id="val-temp">15.0 °C</span>
+                        </label>
+                        <input type="range" class="form-range" name="temperature" min="-5" max="28" step="0.5" value="15.0"
+                               oninput="document.getElementById('val-temp').innerText = this.value + ' °C'">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label d-flex justify-content-between text-secondary" style="font-size: 0.75rem;">
+                            <span>GLACIAL ICE MELT VELOCITY</span>
+                            <span class="text-white fw-bold" id="val-im">18.0 cm/d</span>
+                        </label>
+                        <input type="range" class="form-range" name="ice_melt" min="0" max="45" step="0.5" value="18.0"
+                               oninput="document.getElementById('val-im').innerText = this.value + ' cm/d'">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label d-flex justify-content-between text-secondary" style="font-size: 0.75rem;">
+                            <span>MORAINE GLACIER STABILITY</span>
+                            <span class="text-white fw-bold" id="val-gs">55.0 %</span>
+                        </label>
+                        <input type="range" class="form-range" name="glacier_stability" min="10" max="100" step="1" value="55.0"
+                               oninput="document.getElementById('val-gs').innerText = this.value + ' %'">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label d-flex justify-content-between text-secondary" style="font-size: 0.75rem;">
+                            <span>TERRAIN DISPLACEMENT</span>
+                            <span class="text-white fw-bold" id="val-tm">14.0 mm/d</span>
+                        </label>
+                        <input type="range" class="form-range" name="terrain_movement" min="0" max="50" step="0.5" value="14.0"
+                               oninput="document.getElementById('val-tm').innerText = this.value + ' mm/d'">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label d-flex justify-content-between text-secondary" style="font-size: 0.75rem;">
+                            <span>SEISMIC MAGNITUDE</span>
+                            <span class="text-white fw-bold" id="val-seis">1.2 M</span>
+                        </label>
+                        <input type="range" class="form-range" name="seismic_activity" min="0" max="7.0" step="0.1" value="1.2"
+                               oninput="document.getElementById('val-seis').innerText = this.value + ' M'">
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center pt-2 border-top border-secondary">
+                    <button type="button" class="btn btn-sm btn-risk-outline" onclick="presetCriticalScenario()">
+                        <i class="fa-solid fa-bolt text-warning me-1"></i> Load Extreme Breach Preset
+                    </button>
+                    <button type="submit" id="btn-calculate-risk" class="btn btn-risk-primary px-4">
+                        <i class="fa-solid fa-calculator me-2"></i> CALCULATE RISK
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PREDICTED OUTPUT & EXPLAINABILITY BAR -->
+    <div class="col-lg-5">
+        <!-- Result Gauge Card -->
+        <div class="risk-card mb-3 text-center">
+            <div class="card-title-bar text-start">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-gauge-high text-danger"></i>
+                    <span>ESTIMATED RISK OUTPUT</span>
+                </div>
+                <span class="badge bg-secondary" style="font-size: 0.65rem;">PROTOTYPE MODEL</span>
+            </div>
+
+            <div class="py-3">
+                <div class="gauge-score-display text-warning" id="result-risk-score">62.5</div>
+                <div class="text-muted font-monospace" style="font-size: 0.72rem;">ESTIMATED RISK INDEX (0–100)</div>
+                <div class="mt-2">
+                    <span class="badge-risk badge-risk-high px-3 py-1" id="result-risk-level" style="font-size: 0.85rem;">
+                        HIGH
+                    </span>
+                </div>
+            </div>
+
+            <div class="p-3 bg-dark rounded border border-secondary text-start" style="font-size: 0.75rem;">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Model Confidence:</span>
+                    <strong class="text-white" id="result-confidence">94.8%</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Inference Pipeline:</span>
+                    <span class="text-white">Random Forest (300 Synthetic Trees)</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Disaster Protocol Trigger:</span>
+                    <span class="text-warning fw-bold">Pre-alert Advisory Recommended</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Feature Weights -->
+        <div class="risk-card">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-chart-bar text-info"></i>
+                    <span>MODEL FEATURE IMPORTANCE</span>
+                </div>
+                <a href="{{ url_for('explainability_view') }}" class="btn btn-sm btn-risk-outline py-0 px-2" style="font-size: 0.72rem;">Full XAI</a>
+            </div>
+            <div style="height: 220px; position: relative;">
+                <canvas id="featureImportanceChart"></canvas>
+            </div>
+            <div class="mt-2 text-muted" style="font-size: 0.7rem;">
+                * Relative contribution of telemetry variables in current risk regression model. Does not infer empirical causality.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Feature Importance Horizontal Bar Chart
+    const ctx = document.getElementById('featureImportanceChart').getContext('2d');
+    window.importanceChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['WATER LEVEL', 'DEPTH CHANGE', 'RAINFALL', 'TEMP', 'ICE MELT', 'GLACIER STAB', 'TERRAIN MOV', 'SEISMIC'],
+            datasets: [{
+                data: [15.2, 21.0, 24.5, 6.2, 14.8, 18.0, 12.3, 8.0],
+                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                borderColor: '#3b82f6',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: { ticks: { color: '#cbd5e1', font: { size: 10 } }, grid: { display: false } }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+});
+
+function presetCriticalScenario() {
+    const form = document.getElementById('risk-calc-form');
+    form.water_level.value = 118;
+    document.getElementById('val-wl').innerText = '118.0 m';
+
+    form.water_level_change.value = 4.2;
+    document.getElementById('val-wlc').innerText = '+4.2 m';
+
+    form.rainfall.value = 165;
+    document.getElementById('val-rf').innerText = '165.0 mm';
+
+    form.temperature.value = 22;
+    document.getElementById('val-temp').innerText = '22.0 °C';
+
+    form.ice_melt.value = 34;
+    document.getElementById('val-im').innerText = '34.0 cm/d';
+
+    form.glacier_stability.value = 25;
+    document.getElementById('val-gs').innerText = '25.0 %';
+
+    form.terrain_movement.value = 32;
+    document.getElementById('val-tm').innerText = '32.0 mm/d';
+
+    form.seismic_activity.value = 2.4;
+    document.getElementById('val-seis').innerText = '2.4 M';
+
+    calculateRiskFromForm();
+}
+</script>
+{% endblock %}

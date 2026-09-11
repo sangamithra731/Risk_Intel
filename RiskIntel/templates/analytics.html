@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}Operational Analytics & Performance Intelligence{% endblock %}
+{% block header_title %}Command Operational Analytics & Predictive Trends{% endblock %}
+
+{% block content %}
+<!-- Top Metrics Row -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">
+                <span>Avg Alert Latency</span>
+                <i class="fa-solid fa-bolt text-warning"></i>
+            </div>
+            <div class="stat-value text-white">4.2 <span style="font-size: 0.9rem;">min</span></div>
+            <div class="stat-footer text-muted">AI Detection to Authority Queue</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">
+                <span>Authority Clearance Rate</span>
+                <i class="fa-solid fa-stamp text-success"></i>
+            </div>
+            <div class="stat-value text-success">96.4 <span style="font-size: 0.9rem;">%</span></div>
+            <div class="stat-footer text-muted">Approved Warnings Validated</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">
+                <span>Rescue Deployment Time</span>
+                <i class="fa-solid fa-truck-fast text-info"></i>
+            </div>
+            <div class="stat-value text-info">18 <span style="font-size: 0.9rem;">min</span></div>
+            <div class="stat-footer text-muted">Average Wheels-Up Staging</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">
+                <span>Active Evac Saturation</span>
+                <i class="fa-solid fa-tents text-primary"></i>
+            </div>
+            <div class="stat-value text-white">62.8 <span style="font-size: 0.9rem;">%</span></div>
+            <div class="stat-footer text-muted">Safe Shelter Network Used</div>
+        </div>
+    </div>
+</div>
+
+<!-- CHARTS GRID -->
+<div class="row g-3 mb-4">
+    <!-- Chart 1: Risk Distribution -->
+    <div class="col-lg-6">
+        <div class="risk-card h-100">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-chart-pie text-danger"></i>
+                    <span>LAKE RISK STRATIFICATION</span>
+                </div>
+                <span class="badge bg-dark border border-secondary text-secondary">Current Classification</span>
+            </div>
+            <div style="height: 260px; position: relative;">
+                <canvas id="chartRiskDist"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 2: Alerts Status -->
+    <div class="col-lg-6">
+        <div class="risk-card h-100">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-chart-column text-warning"></i>
+                    <span>ALERT PIPELINE STATUS BREAKDOWN</span>
+                </div>
+                <span class="badge bg-dark border border-secondary text-secondary">Warning Lifecycle</span>
+            </div>
+            <div style="height: 260px; position: relative;">
+                <canvas id="chartAlerts"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 3: Shelter Capacity vs Occupancy -->
+    <div class="col-lg-6">
+        <div class="risk-card h-100">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-chart-bar text-success"></i>
+                    <span>SHELTER CAPACITY VS INTAKE</span>
+                </div>
+                <span class="badge bg-dark border border-secondary text-secondary">Persons</span>
+            </div>
+            <div style="height: 280px; position: relative;">
+                <canvas id="chartShelters"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 4: Resource Supply Levels -->
+    <div class="col-lg-6">
+        <div class="risk-card h-100">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-boxes-stacked text-primary"></i>
+                    <span>RELIEF RESOURCE LOGISTICS: REQUIRED VS AVAILABLE</span>
+                </div>
+                <span class="badge bg-dark border border-secondary text-secondary">Supply Status</span>
+            </div>
+            <div style="height: 280px; position: relative;">
+                <canvas id="chartResources"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const res = await fetch('/api/analytics');
+        const data = await res.json();
+
+        // 1. Risk Dist Chart
+        new Chart(document.getElementById('chartRiskDist').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(data.risk_distribution),
+                datasets: [{
+                    data: Object.values(data.risk_distribution),
+                    backgroundColor: ['#10b981', '#f59e0b', '#f97316', '#ef4444'],
+                    borderColor: '#182235',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'right', labels: { color: '#94a3b8' } } }
+            }
+        });
+
+        // 2. Alert Status Chart
+        new Chart(document.getElementById('chartAlerts').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(data.alert_statuses),
+                datasets: [{
+                    label: 'Alerts',
+                    data: Object.values(data.alert_statuses),
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // 3. Shelter Capacity vs Intake
+        new Chart(document.getElementById('chartShelters').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: data.shelter_occupancy.map(s => s.name.split(' ')[0]),
+                datasets: [
+                    {
+                        label: 'Capacity',
+                        data: data.shelter_occupancy.map(s => s.capacity),
+                        backgroundColor: 'rgba(100, 116, 139, 0.4)',
+                        borderColor: '#64748b',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Occupied',
+                        data: data.shelter_occupancy.map(s => s.occupied),
+                        backgroundColor: '#10b981'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                },
+                plugins: { legend: { labels: { color: '#94a3b8' } } }
+            }
+        });
+
+        // 4. Resources
+        new Chart(document.getElementById('chartResources').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: data.resources.map(r => r.name.split(' ')[0]),
+                datasets: [
+                    {
+                        label: 'Required',
+                        data: data.resources.map(r => r.required),
+                        backgroundColor: '#f97316'
+                    },
+                    {
+                        label: 'Available',
+                        data: data.resources.map(r => r.available),
+                        backgroundColor: '#3b82f6'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                },
+                plugins: { legend: { labels: { color: '#94a3b8' } } }
+            }
+        });
+    } catch (e) {
+        console.error("Analytics chart render error", e);
+    }
+});
+</script>
+{% endblock %}

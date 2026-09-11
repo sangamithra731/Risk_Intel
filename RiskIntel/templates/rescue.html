@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}Rescue Operations & Emergency SOS Dispatch{% endblock %}
+{% block header_title %}Rescue Operations Coordination & Civilian SOS Hub{% endblock %}
+
+{% block content %}
+<!-- RESCUE TEAMS DISPATCH GRID -->
+<div class="risk-card mb-4">
+    <div class="card-title-bar">
+        <div class="card-title-text">
+            <i class="fa-solid fa-truck-medical text-primary"></i>
+            <span>DEPLOYED SEARCH & RESCUE UNITS (NDRF / SDRF)</span>
+        </div>
+        <span class="badge bg-dark border border-secondary text-white">{{ teams|length }} Units Active</span>
+    </div>
+    <div class="row g-3">
+        {% for t in teams %}
+        <div class="col-md-6 col-xl-3">
+            <div class="p-3 rounded bg-dark border border-secondary h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-white fw-bold" style="font-size: 0.85rem;">{{ t.team_name }}</span>
+                        <span class="badge {% if t.status == 'DEPLOYED' %}bg-danger{% elif t.status == 'EN_ROUTE' %}bg-warning text-dark{% elif t.status == 'STANDBY' %}bg-success{% else %}bg-secondary{% endif %}" style="font-size: 0.65rem;">
+                            {{ t.status }}
+                        </span>
+                    </div>
+                    <div class="text-muted mb-1" style="font-size: 0.72rem;">
+                        <i class="fa-solid fa-users me-1"></i> Personnel: <strong class="text-white">{{ t.personnel }} Operatives</strong>
+                    </div>
+                    <div class="text-muted" style="font-size: 0.72rem;">
+                        <i class="fa-solid fa-location-dot me-1"></i> Staging: {{ t.location }}
+                    </div>
+                </div>
+
+                {% if session.get('role') != 'VIEWER' %}
+                <div class="mt-3 pt-2 border-top border-secondary d-flex justify-content-between align-items-center">
+                    <span class="text-muted" style="font-size: 0.68rem;">Reassign Status:</span>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-risk-outline py-0 px-2 dropdown-toggle" data-bs-toggle="dropdown" style="font-size: 0.7rem;">
+                            Update
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end modal-content-risk">
+                            <li><a class="dropdown-item text-success" href="javascript:void(0)" onclick="updateTeamStatus({{ t.id }}, 'STANDBY')">STANDBY</a></li>
+                            <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="updateTeamStatus({{ t.id }}, 'DEPLOYED')">DEPLOYED</a></li>
+                            <li><a class="dropdown-item text-warning" href="javascript:void(0)" onclick="updateTeamStatus({{ t.id }}, 'EN_ROUTE')">EN_ROUTE</a></li>
+                            <li><a class="dropdown-item text-secondary" href="javascript:void(0)" onclick="updateTeamStatus({{ t.id }}, 'RESTING')">RESTING</a></li>
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- CIVILIAN SOS REQUESTS INTERFACE -->
+<div class="risk-card p-0 overflow-hidden">
+    <div class="card-title-bar px-3 pt-3 mb-0">
+        <div class="card-title-text">
+            <i class="fa-solid fa-tower-broadcast text-danger"></i>
+            <span>CIVILIAN SOS DISTRESS SIGNALS</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-danger" id="sos-pending-count">{{ sos_requests|selectattr('status', 'equalto', 'PENDING')|list|length }} Pending</span>
+            {% if session.get('role') != 'VIEWER' %}
+            <button class="btn btn-sm btn-risk-primary py-0 px-2" data-bs-toggle="modal" data-bs-target="#newSosModal">
+                <i class="fa-solid fa-plus me-1"></i> Log SOS Call
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table-risk">
+            <thead>
+                <tr>
+                    <th>SOS ID</th>
+                    <th>Reporter Name / Group</th>
+                    <th>Coordinates / Sector</th>
+                    <th>Priority</th>
+                    <th>Assigned Response Unit</th>
+                    <th>Status</th>
+                    <th class="text-end">Coordination Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in sos_requests %}
+                <tr>
+                    <td class="font-monospace text-white fw-bold">#SOS-{{ "%04d"|format(s.id) }}</td>
+                    <td class="text-white fw-semibold">
+                        <i class="fa-solid fa-person-circle-exclamation text-danger me-1"></i> {{ s.reporter }}
+                    </td>
+                    <td class="text-secondary">{{ s.location }}</td>
+                    <td>
+                        <span class="badge-risk badge-risk-{{ s.priority.lower() }}">{{ s.priority }}</span>
+                    </td>
+                    <td>
+                        <span class="text-white font-monospace" style="font-size: 0.76rem;">
+                            {{ s.assigned_team or 'None (Unassigned)' }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge {% if s.status == 'PENDING' %}bg-danger{% elif s.status == 'ASSIGNED' %}bg-warning text-dark{% elif s.status == 'RESOLVED' %}bg-success{% else %}bg-secondary{% endif %}">
+                            {{ s.status }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        {% if session.get('role') != 'VIEWER' %}
+                            {% if s.status == 'PENDING' %}
+                            <button class="btn btn-sm btn-risk-primary py-1 px-2" data-bs-toggle="modal" data-bs-target="#assignTeamModal{{ s.id }}">
+                                <i class="fa-solid fa-user-plus me-1"></i> Dispatch Team
+                            </button>
+                            {% elif s.status == 'ASSIGNED' %}
+                            <button class="btn btn-sm btn-risk-outline py-1 px-2 text-success" onclick="resolveSos({{ s.id }})">
+                                <i class="fa-solid fa-circle-check me-1"></i> Resolve SOS
+                            </button>
+                            {% else %}
+                            <span class="text-muted" style="font-size: 0.72rem;"><i class="fa-solid fa-check me-1"></i> Closed</span>
+                            {% endif %}
+                        {% else %}
+                        <span class="text-muted" style="font-size: 0.72rem;">Read-Only</span>
+                        {% endif %}
+                    </td>
+                </tr>
+
+                <!-- Assign Team Modal -->
+                {% if session.get('role') != 'VIEWER' %}
+                <div class="modal fade" id="assignTeamModal{{ s.id }}" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content modal-content-risk">
+                            <div class="modal-header modal-header-risk">
+                                <h5 class="modal-title text-white fw-bold">Dispatch Rescue Team &rarr; SOS #{{ s.id }}</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body p-4">
+                                <p class="text-secondary mb-3" style="font-size: 0.8rem;">
+                                    Reporter: <strong class="text-white">{{ s.reporter }}</strong><br>
+                                    Location: <strong class="text-info">{{ s.location }}</strong>
+                                </p>
+                                <label class="form-label text-secondary" style="font-size: 0.75rem;">SELECT AVAILABLE RESCUE TEAM</label>
+                                <select id="assign-team-select-{{ s.id }}" class="form-select form-select-risk">
+                                    {% for t in teams %}
+                                    <option value="{{ t.team_name }}">{{ t.team_name }} ({{ t.personnel }} pers. &bull; {{ t.status }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="modal-footer modal-footer-risk">
+                                <button type="button" class="btn btn-sm btn-risk-outline" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-sm btn-risk-primary" onclick="assignSosTeam({{ s.id }})">
+                                    <i class="fa-solid fa-paper-plane me-1"></i> Deploy Team
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Log SOS Call -->
+{% if session.get('role') != 'VIEWER' %}
+<div class="modal fade" id="newSosModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-risk">
+            <div class="modal-header modal-header-risk">
+                <h5 class="modal-title text-white fw-bold"><i class="fa-solid fa-phone-volume text-danger me-2"></i>Log Incoming SOS Distress Call</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label text-secondary" style="font-size: 0.75rem;">CALLER / CONTACT IDENTIFIER</label>
+                    <input type="text" id="sos-reporter-input" class="form-control form-control-risk" placeholder="e.g., Ang Dorje (Trekking Guide)" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-secondary" style="font-size: 0.75rem;">COORDINATES / GEOGRAPHIC LANDMARK</label>
+                    <input type="text" id="sos-location-input" class="form-control form-control-risk" placeholder="e.g., Lachen Foot Bridge KM 14" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-secondary" style="font-size: 0.75rem;">DISTRESS PRIORITY</label>
+                    <select id="sos-priority-input" class="form-select form-select-risk">
+                        <option value="CRITICAL">CRITICAL — Imminent Life Threat</option>
+                        <option value="HIGH" selected>HIGH — Stranded / Rising Water</option>
+                        <option value="MEDIUM">MEDIUM — Evacuation Assistance</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer modal-footer-risk">
+                <button type="button" class="btn btn-sm btn-risk-outline" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-sm btn-risk-primary" onclick="submitSosCall()">
+                    <i class="fa-solid fa-tower-broadcast me-1"></i> Broadcast SOS to Dispatch
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function updateTeamStatus(teamId, status) {
+    try {
+        const res = await fetch(`/api/rescue-teams/${teamId}/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(`Team status set to ${status}`, 'success');
+            setTimeout(() => window.location.reload(), 600);
+        }
+    } catch (e) {
+        showToast('Error updating rescue team', 'danger');
+    }
+}
+
+async function assignSosTeam(sosId) {
+    const teamName = document.getElementById(`assign-team-select-${sosId}`).value;
+    try {
+        const res = await fetch(`/api/sos/${sosId}/assign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ assigned_team: teamName })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(`Team ${teamName} assigned to SOS #${sosId}`, 'success');
+            setTimeout(() => window.location.reload(), 600);
+        }
+    } catch (e) {
+        showToast('Error assigning team', 'danger');
+    }
+}
+
+async function resolveSos(sosId) {
+    try {
+        const res = await fetch(`/api/sos/${sosId}/resolve`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(`SOS #${sosId} marked resolved`, 'success');
+            setTimeout(() => window.location.reload(), 600);
+        }
+    } catch (e) {
+        showToast('Error resolving SOS', 'danger');
+    }
+}
+
+async function submitSosCall() {
+    const reporter = document.getElementById('sos-reporter-input').value;
+    const location = document.getElementById('sos-location-input').value;
+    const priority = document.getElementById('sos-priority-input').value;
+
+    if (!reporter || !location) {
+        showToast('Please provide reporter and location', 'danger');
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/sos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reporter, location, priority })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('New SOS dispatch broadcasted', 'warning');
+            setTimeout(() => window.location.reload(), 600);
+        }
+    } catch (e) {
+        showToast('Error submitting SOS call', 'danger');
+    }
+}
+</script>
+{% endblock %}

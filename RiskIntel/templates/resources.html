@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Emergency Relief Logistics & Resources{% endblock %}
+{% block header_title %}Disaster Relief Supplies & Resource Inventory{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="text-white fw-bold mb-1">Stockpile & Supply Logistics</h4>
+        <p class="text-muted mb-0" style="font-size: 0.8rem;">Critical supply lines: Potable water, medical rations, fuel, and heavy vehicles.</p>
+    </div>
+</div>
+
+<!-- Stock Grid Cards -->
+<div class="row g-3 mb-4">
+    {% for r in resources %}
+    {% set shortage = r.required - (r.available + r.allocated) %}
+    <div class="col-md-6 col-xl-3">
+        <div class="risk-card h-100 d-flex flex-column justify-content-between {% if shortage > 0 %}border-danger{% endif %}">
+            <div>
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="text-white fw-bold" style="font-size: 0.85rem;">{{ r.name }}</span>
+                    {% if shortage > 0 %}
+                    <span class="badge bg-danger" style="font-size: 0.65rem;">SHORTAGE</span>
+                    {% else %}
+                    <span class="badge bg-success" style="font-size: 0.65rem;">STABLE</span>
+                    {% endif %}
+                </div>
+
+                <div class="p-2 rounded bg-dark border border-secondary mb-3" style="font-size: 0.74rem;">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Required:</span>
+                        <strong class="text-white font-monospace">{{ "{:,}".format(r.required) }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Available Stock:</span>
+                        <span class="text-info font-monospace">{{ "{:,}".format(r.available) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Allocated Field:</span>
+                        <span class="text-warning font-monospace">{{ "{:,}".format(r.allocated) }}</span>
+                    </div>
+                </div>
+
+                {% if shortage > 0 %}
+                <div class="alert alert-danger py-1 px-2 border-0 mb-0 d-flex align-items-center gap-2" style="font-size: 0.72rem; background: rgba(239, 68, 68, 0.15);">
+                    <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+                    <span>Deficit: <strong class="text-white">{{ "{:,}".format(shortage) }} units needed</strong></span>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if session.get('role') != 'VIEWER' %}
+            <div class="mt-3 pt-2 border-top border-secondary d-flex justify-content-between align-items-center">
+                <span class="text-muted" style="font-size: 0.7rem;">Field Dispatch:</span>
+                <button class="btn btn-sm btn-risk-primary py-1 px-2" data-bs-toggle="modal" data-bs-target="#allocModal{{ r.id }}" {% if r.available <= 0 %}disabled{% endif %}>
+                    <i class="fa-solid fa-truck-ramp-box me-1"></i> Allocate
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Allocate Modal -->
+    {% if session.get('role') != 'VIEWER' %}
+    <div class="modal fade" id="allocModal{{ r.id }}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-content-risk">
+                <div class="modal-header modal-header-risk">
+                    <h5 class="modal-title text-white fw-bold">Allocate {{ r.name }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted" style="font-size: 0.8rem;">Currently Available: <strong class="text-white">{{ r.available }}</strong></p>
+                    <label class="form-label text-secondary" style="font-size: 0.75rem;">DISPATCH QUANTITY</label>
+                    <input type="number" id="alloc-qty-{{ r.id }}" class="form-control form-control-risk" value="100" min="1" max="{{ r.available }}" required>
+                </div>
+                <div class="modal-footer modal-footer-risk">
+                    <button type="button" class="btn btn-sm btn-risk-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-sm btn-risk-primary" onclick="submitAllocation({{ r.id }})">
+                        <i class="fa-solid fa-check me-1"></i> Confirm Dispatch
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function submitAllocation(resId) {
+    const qty = document.getElementById(`alloc-qty-${resId}`).value;
+    try {
+        const res = await fetch(`/api/resources/${resId}/allocate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount: parseInt(qty) })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('Supply units dispatched to forward teams', 'success');
+            setTimeout(() => window.location.reload(), 600);
+        } else {
+            showToast(data.error || 'Allocation failed', 'danger');
+        }
+    } catch (e) {
+        showToast('Network error during allocation', 'danger');
+    }
+}
+</script>
+{% endblock %}

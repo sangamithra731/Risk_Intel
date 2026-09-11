@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Explainable AI (XAI) & Model Transparency{% endblock %}
+{% block header_title %}Model Explainability & Feature Attribution{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+    <!-- Main Feature Importance Horizontal Bar Chart -->
+    <div class="col-lg-8">
+        <div class="risk-card h-100">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-chart-simple text-primary"></i>
+                    <span>MODEL FEATURE IMPORTANCE (RANDOM FOREST REGRESSOR)</span>
+                </div>
+                <span class="badge bg-dark border border-secondary text-info">Gini Impurity Metric</span>
+            </div>
+            <p class="text-secondary" style="font-size: 0.8rem;">
+                Relative statistical weighting across 300 decision trees for estimating glacial outburst flood (GLOF) propensity.
+            </p>
+            <div style="height: 320px; position: relative;">
+                <canvas id="xaiImportanceChart"></canvas>
+            </div>
+            <div class="mt-3 p-3 bg-dark rounded border border-secondary text-muted" style="font-size: 0.74rem;">
+                <i class="fa-solid fa-circle-info text-info me-1"></i>
+                <strong>Scientific Attribution Disclaimer:</strong> Feature importance indicates the relative contribution of each variable to variance reduction within this prototype regression model. It reflects algorithmic sensitivity and <strong>does not prove empirical causal mechanics</strong> in high-altitude glaciology.
+            </div>
+        </div>
+    </div>
+
+    <!-- Algorithm Specifications & Confidence -->
+    <div class="col-lg-4">
+        <div class="risk-card mb-3">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-microchip text-success"></i>
+                    <span>ALGORITHM SPECIFICATION</span>
+                </div>
+                <span class="badge bg-secondary" style="font-size: 0.65rem;">v2.6</span>
+            </div>
+            <div class="d-flex flex-column gap-2" style="font-size: 0.78rem;">
+                <div class="d-flex justify-content-between pb-1 border-bottom border-secondary">
+                    <span class="text-muted">Model Family:</span>
+                    <strong class="text-white">Random Forest Regressor</strong>
+                </div>
+                <div class="d-flex justify-content-between pb-1 border-bottom border-secondary">
+                    <span class="text-muted">Estimator Count:</span>
+                    <span class="text-white font-monospace">60 Trees</span>
+                </div>
+                <div class="d-flex justify-content-between pb-1 border-bottom border-secondary">
+                    <span class="text-muted">Max Tree Depth:</span>
+                    <span class="text-white font-monospace">8 Levels</span>
+                </div>
+                <div class="d-flex justify-content-between pb-1 border-bottom border-secondary">
+                    <span class="text-muted">Cross-Validation R²:</span>
+                    <span class="text-success font-monospace">0.924</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Operational State:</span>
+                    <span class="badge bg-success" style="font-size: 0.65rem;">CALIBRATED (SYNTHETIC)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="risk-card">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-scale-balanced text-warning"></i>
+                    <span>RISK STRATIFICATION</span>
+                </div>
+            </div>
+            <div class="d-flex flex-column gap-2" style="font-size: 0.75rem;">
+                <div class="p-2 rounded" style="background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981;">
+                    <div class="fw-bold text-success">0 – 25 : LOW RISK</div>
+                    <div class="text-muted">Standard observation; baseline sensor cycles.</div>
+                </div>
+                <div class="p-2 rounded" style="background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b;">
+                    <div class="fw-bold text-warning">26 – 50 : MODERATE RISK</div>
+                    <div class="text-muted">Heightened surveillance; weather radar tracking.</div>
+                </div>
+                <div class="p-2 rounded" style="background: rgba(249, 115, 22, 0.1); border-left: 3px solid #f97316;">
+                    <div class="fw-bold" style="color: #f97316;">51 – 75 : HIGH RISK</div>
+                    <div class="text-muted">Alert recommendations queued; rescue standby.</div>
+                </div>
+                <div class="p-2 rounded" style="background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444;">
+                    <div class="fw-bold text-danger">76 – 100 : CRITICAL RISK</div>
+                    <div class="text-muted">Immediate evacuation staging; emergency siren dispatch.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- RECENT AI RISK PREDICTIONS TABLE -->
+<div class="risk-card p-0 overflow-hidden">
+    <div class="card-title-bar px-3 pt-3 mb-0">
+        <div class="card-title-text">
+            <i class="fa-solid fa-clock-rotate-left text-info"></i>
+            <span>RECENT AI RISK INFERENCE CYCLES</span>
+        </div>
+        <span class="badge bg-secondary" style="font-size: 0.65rem;">Model Audit Log</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table-risk">
+            <thead>
+                <tr>
+                    <th>Lake Target</th>
+                    <th>Prediction Timestamp</th>
+                    <th>Risk Score</th>
+                    <th>Risk Level</th>
+                    <th>Confidence</th>
+                    <th>Action Recommended</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rp in recent_preds %}
+                <tr>
+                    <td class="fw-bold text-white">{{ rp.lake_name }}</td>
+                    <td class="font-monospace text-secondary" style="font-size: 0.72rem;">{{ rp.prediction_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td><strong class="font-monospace text-white">{{ rp.risk_score }}</strong> / 100</td>
+                    <td>
+                        <span class="badge-risk badge-risk-{{ rp.risk_level.lower() }}">{{ rp.risk_level }}</span>
+                    </td>
+                    <td class="text-info font-monospace">{{ rp.confidence }}%</td>
+                    <td>
+                        {% if rp.risk_level == 'CRITICAL' %}
+                        <span class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation me-1"></i> Evacuate Zone</span>
+                        {% elif rp.risk_level == 'HIGH' %}
+                        <span class="text-warning fw-bold"><i class="fa-solid fa-bell me-1"></i> Issue Pre-alert</span>
+                        {% else %}
+                        <span class="text-muted">Maintain Routine Scan</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const ctx = document.getElementById('xaiImportanceChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [{% for k in feature_importances.keys() %}'{{ k|replace("_", " ")|upper }}',{% endfor %}],
+            datasets: [{
+                label: 'Relative Attribution Weight (%)',
+                data: [{% for v in feature_importances.values() %}{{ v }},{% endfor %}],
+                backgroundColor: [
+                    '#3b82f6', '#06b6d4', '#10b981', '#f59e0b',
+                    '#f97316', '#ef4444', '#8b5cf6', '#ec4899'
+                ],
+                borderRadius: 4
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    ticks: { color: '#94a3b8' },
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    title: { display: true, text: 'Attribution Contribution Percentage (%)', color: '#64748b' }
+                },
+                y: {
+                    ticks: { color: '#f1f5f9', font: { weight: 'bold', size: 11 } },
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

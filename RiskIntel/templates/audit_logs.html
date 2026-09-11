@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}System Audit Logs & Security Trails{% endblock %}
+{% block header_title %}Immutable Command Audit Trail & Security Logs{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="text-white fw-bold mb-1">Operational Audit Trails</h4>
+        <p class="text-muted mb-0" style="font-size: 0.8rem;">Chronological record of operator actions, alert approvals, resource dispatches, and system alterations.</p>
+    </div>
+</div>
+
+<!-- Search & Module Filter -->
+<div class="risk-card p-3 mb-3">
+    <div class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text bg-dark border-secondary text-secondary"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="text" id="audit-search" class="form-control form-control-risk" placeholder="Filter by user or action detail...">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select id="audit-module-filter" class="form-select form-select-risk">
+                <option value="ALL">All Modules</option>
+                <option value="Authentication">Authentication</option>
+                <option value="Alerts">Alerts</option>
+                <option value="Incidents">Incidents</option>
+                <option value="Rescue">Rescue</option>
+                <option value="SOS">SOS</option>
+                <option value="Shelters">Shelters</option>
+                <option value="Resources">Resources</option>
+                <option value="Simulation">Simulation</option>
+                <option value="Lakes">Lakes</option>
+                <option value="Admin">Admin</option>
+            </select>
+        </div>
+        <div class="col-md-3 text-end text-muted" style="font-size: 0.75rem;">
+            Showing last <strong class="text-white">{{ logs|length }}</strong> audit records
+        </div>
+    </div>
+</div>
+
+<!-- Audit Log Table -->
+<div class="risk-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table-risk" id="audit-table">
+            <thead>
+                <tr>
+                    <th>Record ID</th>
+                    <th>Timestamp (UTC)</th>
+                    <th>Operator / User</th>
+                    <th>Command Module</th>
+                    <th>Action Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr data-module="{{ log.module }}" data-text="{{ log.user|lower }} {{ log.action|lower }} {{ log.module|lower }}">
+                    <td class="font-monospace text-muted" style="font-size: 0.72rem;">#LOG-{{ "%05d"|format(log.id) }}</td>
+                    <td class="font-monospace text-secondary" style="font-size: 0.75rem;">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td class="fw-bold text-white">
+                        <i class="fa-solid fa-user-tag text-primary me-1"></i> {{ log.user }}
+                    </td>
+                    <td>
+                        <span class="badge bg-dark border border-secondary text-info font-monospace">{{ log.module }}</span>
+                    </td>
+                    <td class="text-white" style="font-size: 0.8rem;">
+                        {{ log.action }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('audit-search');
+    const moduleFilter = document.getElementById('audit-module-filter');
+    const rows = document.querySelectorAll('#audit-table tbody tr');
+
+    function filterAudit() {
+        const query = searchInput.value.toLowerCase();
+        const mod = moduleFilter.value;
+
+        rows.forEach(r => {
+            const matchesText = r.getAttribute('data-text').includes(query);
+            const matchesMod = (mod === 'ALL' || r.getAttribute('data-module') === mod);
+            r.style.display = (matchesText && matchesMod) ? '' : 'none';
+        });
+    }
+
+    searchInput.addEventListener('input', filterAudit);
+    moduleFilter.addEventListener('change', filterAudit);
+});
+</script>
+{% endblock %}

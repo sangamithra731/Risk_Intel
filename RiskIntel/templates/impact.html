@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Downstream Impact Assessment & Vulnerability Matrix{% endblock %}
+{% block header_title %}Downstream Impact & Vulnerability Analysis{% endblock %}
+
+{% block content %}
+<!-- Top Stats Row -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-md-3">
+        <div class="stat-card" style="border-left: 3px solid #ef4444;">
+            <div class="stat-label">
+                <span>Estimated Affected Pop.</span>
+                <i class="fa-solid fa-users text-danger"></i>
+            </div>
+            <div class="stat-value text-danger">{{ "{:,}".format(total_pop_threatened) }}</div>
+            <div class="stat-footer text-muted">Direct Inundation Corridor</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">
+                <span>Active Evac Zones</span>
+                <i class="fa-solid fa-person-walking-arrow-right text-warning"></i>
+            </div>
+            <div class="stat-value text-white">{{ evac_plans|length }}</div>
+            <div class="stat-footer text-warning">Designated High Priority</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">
+                <span>Critical Infrastructure</span>
+                <i class="fa-solid fa-bridge-water text-primary"></i>
+            </div>
+            <div class="stat-value text-white">{{ infrastructure|length }}</div>
+            <div class="stat-footer text-muted">Dams, Bridges, Roads, Med</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">
+                <span>Flood Arrival Lead Time</span>
+                <i class="fa-solid fa-stopwatch text-info"></i>
+            </div>
+            <div class="stat-value text-info">48 <span style="font-size: 0.9rem;">min</span></div>
+            <div class="stat-footer text-muted">To First Downstream Cluster</div>
+        </div>
+    </div>
+</div>
+
+<!-- IMPACT MAP & HIGH RISK SOURCES -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-8">
+        <div class="risk-card p-0 overflow-hidden d-flex flex-column" style="min-height: 480px;">
+            <div class="card-title-bar px-3 pt-3 mb-0">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-map-location-dot text-danger"></i>
+                    <span>ESTIMATED FLOOD CORRIDOR & ASSET VULNERABILITY MAP</span>
+                </div>
+                <span class="badge bg-danger" style="font-size: 0.65rem;">ESTIMATED IMPACT</span>
+            </div>
+            <div id="impact-map" style="flex: 1; min-height: 420px;"></div>
+        </div>
+    </div>
+
+    <!-- Threat Origin Lakes -->
+    <div class="col-lg-4">
+        <div class="risk-card h-100">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-water text-danger"></i>
+                    <span>ELEVATED IMPACT SOURCES</span>
+                </div>
+            </div>
+            <div class="d-flex flex-column gap-2">
+                {% for l in high_risk_lakes %}
+                <div class="p-2 rounded bg-dark border border-secondary">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-white fw-bold">{{ l.name }}</span>
+                        <span class="badge-risk badge-risk-{{ l.risk_level.lower() }}">{{ l.risk_level }}</span>
+                    </div>
+                    <div class="text-muted" style="font-size: 0.72rem;">{{ l.location }} &bull; Elev: {{ l.elevation }}m</div>
+                    <div class="d-flex justify-content-between mt-2 pt-1 border-top border-secondary text-secondary" style="font-size: 0.7rem;">
+                        <span>Estimated Surge Vol: <strong>14.2M m³</strong></span>
+                        <a href="{{ url_for('lake_detail_view', id=l.id) }}" class="text-primary">Telemetry &rarr;</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- INFRASTRUCTURE BREAKDOWN BY SECTOR -->
+<div class="row g-3">
+    <!-- Critical Roads & Bridges -->
+    <div class="col-md-6 col-xl-3">
+        <div class="risk-card h-100">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-road text-primary"></i>
+                    <span>ROADS & BRIDGES</span>
+                </div>
+            </div>
+            <div class="d-flex flex-column gap-2" style="font-size: 0.75rem;">
+                {% for inf in infrastructure if inf.type in ['Bridge', 'Road'] %}
+                <div class="p-2 rounded bg-dark border border-secondary">
+                    <div class="d-flex justify-content-between">
+                        <span class="text-white fw-semibold">{{ inf.name }}</span>
+                        <span class="badge {% if inf.status == 'OPERATIONAL' %}bg-success{% elif inf.status == 'DAMAGED' %}bg-danger{% else %}bg-warning text-dark{% endif %}" style="font-size: 0.65rem;">
+                            {{ inf.status }}
+                        </span>
+                    </div>
+                    <div class="text-muted" style="font-size: 0.7rem;">{{ inf.location }} &bull; Cond: {{ inf.condition }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Dams & Hydroelectric Facilities -->
+    <div class="col-md-6 col-xl-3">
+        <div class="risk-card h-100">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-dam text-warning"></i>
+                    <span>DAMS & POWER GRIDS</span>
+                </div>
+            </div>
+            <div class="d-flex flex-column gap-2" style="font-size: 0.75rem;">
+                {% for inf in infrastructure if inf.type in ['Dam', 'Power'] %}
+                <div class="p-2 rounded bg-dark border border-secondary">
+                    <div class="d-flex justify-content-between">
+                        <span class="text-white fw-semibold">{{ inf.name }}</span>
+                        <span class="badge {% if inf.status == 'OPERATIONAL' %}bg-success{% else %}bg-danger{% endif %}" style="font-size: 0.65rem;">
+                            {{ inf.status }}
+                        </span>
+                    </div>
+                    <div class="text-muted" style="font-size: 0.7rem;">{{ inf.location }} &bull; Cond: {{ inf.condition }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Hospitals & Medical Centers -->
+    <div class="col-md-6 col-xl-3">
+        <div class="risk-card h-100">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-hospital text-danger"></i>
+                    <span>HOSPITALS & CLINICS</span>
+                </div>
+            </div>
+            <div class="d-flex flex-column gap-2" style="font-size: 0.75rem;">
+                {% for inf in infrastructure if inf.type in ['Hospital', 'School'] %}
+                <div class="p-2 rounded bg-dark border border-secondary">
+                    <div class="d-flex justify-content-between">
+                        <span class="text-white fw-semibold">{{ inf.name }}</span>
+                        <span class="badge bg-success" style="font-size: 0.65rem;">{{ inf.status }}</span>
+                    </div>
+                    <div class="text-muted" style="font-size: 0.7rem;">{{ inf.location }} &bull; Cond: {{ inf.condition }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Telecom & Water Works -->
+    <div class="col-md-6 col-xl-3">
+        <div class="risk-card h-100">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-tower-cell text-info"></i>
+                    <span>TELECOM & UTILITIES</span>
+                </div>
+            </div>
+            <div class="d-flex flex-column gap-2" style="font-size: 0.75rem;">
+                {% for inf in infrastructure if inf.type in ['Telecom', 'Water'] %}
+                <div class="p-2 rounded bg-dark border border-secondary">
+                    <div class="d-flex justify-content-between">
+                        <span class="text-white fw-semibold">{{ inf.name }}</span>
+                        <span class="badge {% if inf.status == 'OPERATIONAL' %}bg-success{% elif inf.status == 'OFFLINE' %}bg-danger{% else %}bg-warning text-dark{% endif %}" style="font-size: 0.65rem;">
+                            {{ inf.status }}
+                        </span>
+                    </div>
+                    <div class="text-muted" style="font-size: 0.7rem;">{{ inf.location }} &bull; Cond: {{ inf.condition }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const map = L.map('impact-map').setView([27.7, 88.5], 8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Add high risk lake sources
+    {% for l in high_risk_lakes %}
+    L.marker([{{ l.latitude }}, {{ l.longitude }}], {
+        icon: getCustomMarkerIcon('#ef4444', 'fa-solid fa-water')
+    }).addTo(map).bindPopup('<strong>{{ l.name }}</strong><br>Estimated Hazard Epicenter');
+
+    L.circle([{{ l.latitude }}, {{ l.longitude }}], {
+        color: '#ef4444',
+        fillColor: '#ef4444',
+        fillOpacity: 0.2,
+        radius: 15000,
+        dashArray: '5, 5'
+    }).addTo(map);
+    {% endfor %}
+
+    // Add estimated downstream inundation path
+    const floodPath = [
+        [27.915, 88.204],
+        [27.728, 88.556],
+        [27.604, 88.647],
+        [27.508, 88.528],
+        [27.412, 88.543],
+        [27.234, 88.498],
+        [27.177, 88.531]
+    ];
+    L.polyline(floodPath, {
+        color: '#f97316',
+        weight: 5,
+        opacity: 0.85,
+        dashArray: '8, 8'
+    }).addTo(map).bindPopup('Estimated GLOF Surge Wave Travel Corridor (Teesta River Channel)');
+});
+</script>
+{% endblock %}

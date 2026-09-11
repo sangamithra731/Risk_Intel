@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+
+{% block title %}{{ lake.name }} — Glacial Telemetry & AI Risk{% endblock %}
+{% block header_title %}Lake Sensor Telemetry & Hydrodynamic Risk{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+        <div class="d-flex align-items-center gap-2">
+            <h3 class="text-white fw-bold mb-0">{{ lake.name }}</h3>
+            <span class="badge-risk badge-risk-{{ lake.risk_level.lower() }}">{{ lake.risk_level }} RISK</span>
+            <span class="badge bg-dark border border-secondary text-secondary font-monospace">{{ lake.status }}</span>
+        </div>
+        <div class="text-muted mt-1" style="font-size: 0.8rem;">
+            <i class="fa-solid fa-location-dot me-1 text-danger"></i> {{ lake.location }} &bull; Coordinates: {{ lake.latitude }}°N, {{ lake.longitude }}°E
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('lakes_view') }}" class="btn btn-sm btn-risk-outline">
+            <i class="fa-solid fa-arrow-left me-1"></i> Lakes Directory
+        </a>
+        <a href="{{ url_for('simulation_view') }}" class="btn btn-sm btn-risk-primary">
+            <i class="fa-solid fa-bolt me-1"></i> Simulate Scenario
+        </a>
+    </div>
+</div>
+
+<!-- LAKE PROFILE STATS & AI GAUGE ROW -->
+<div class="row g-3 mb-4">
+    <!-- Physical Basin Parameters -->
+    <div class="col-lg-8">
+        <div class="risk-card h-100">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-mountain text-primary"></i>
+                    <span>HYDROLOGIC & TOPOGRAPHIC PROFILE</span>
+                </div>
+                <span class="badge bg-dark border border-secondary text-secondary">Sensor Stn #GL-{{ lake.id }}</span>
+            </div>
+            <div class="row g-3">
+                <div class="col-sm-6 col-md-3">
+                    <div class="p-3 rounded bg-dark border border-secondary text-center">
+                        <div class="text-muted" style="font-size: 0.7rem; text-transform: uppercase;">Surface Elevation</div>
+                        <div class="stat-value text-white my-1" style="font-size: 1.4rem;">{{ lake.elevation }} <span style="font-size: 0.8rem;">m</span></div>
+                        <div class="text-muted" style="font-size: 0.68rem;">Above Sea Level</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <div class="p-3 rounded bg-dark border border-secondary text-center">
+                        <div class="text-muted" style="font-size: 0.7rem; text-transform: uppercase;">Surface Area</div>
+                        <div class="stat-value text-info my-1" style="font-size: 1.4rem;">{{ lake.area }} <span style="font-size: 0.8rem;">ha</span></div>
+                        <div class="text-muted" style="font-size: 0.68rem;">Synthetic Radar Survey</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <div class="p-3 rounded bg-dark border border-secondary text-center">
+                        <div class="text-muted" style="font-size: 0.7rem; text-transform: uppercase;">Water Depth</div>
+                        <div class="stat-value text-white my-1" style="font-size: 1.4rem;">{{ lake.water_level }} <span style="font-size: 0.8rem;">m</span></div>
+                        <div class="text-muted" style="font-size: 0.68rem;">Sonar Sensor Probe</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <div class="p-3 rounded bg-dark border border-secondary text-center">
+                        <div class="text-muted" style="font-size: 0.7rem; text-transform: uppercase;">24h Depth Delta</div>
+                        <div class="stat-value {% if lake.water_level_change > 0 %}text-danger{% elif lake.water_level_change < 0 %}text-success{% else %}text-white{% endif %} my-1" style="font-size: 1.4rem;">
+                            {{ '+' if lake.water_level_change > 0 else '' }}{{ lake.water_level_change }} <span style="font-size: 0.8rem;">m</span>
+                        </div>
+                        <div class="text-muted" style="font-size: 0.68rem;">Rate of Moraine Fill</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-top border-secondary">
+                <h6 class="text-white fw-bold mb-2" style="font-size: 0.82rem;"><i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> Downstream Impact Projection</h6>
+                <p class="text-secondary mb-0" style="font-size: 0.78rem;">
+                    Should a terminal moraine breach trigger at {{ lake.name }}, downstream surge wave travel time to the first inhabited sector (Chungthang Valley) is estimated at <strong>48 minutes</strong>. Direct flood hydrograph peak discharge exceeds 4,200 m³/s.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Risk Gauge & Confidence -->
+    <div class="col-lg-4">
+        <div class="risk-card h-100 d-flex flex-column justify-content-between text-center">
+            <div class="card-title-bar text-start">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-microchip text-danger"></i>
+                    <span>AI RISK INFERENCE GAUGE</span>
+                </div>
+                <span class="badge bg-secondary" style="font-size: 0.65rem;">PROTOTYPE MODEL</span>
+            </div>
+
+            <div class="gauge-container py-3">
+                <div class="gauge-score-display text-{% if lake.risk_score >= 75 %}danger{% elif lake.risk_score >= 50 %}warning{% else %}success{% endif %}">
+                    {{ lake.risk_score }}
+                </div>
+                <div class="text-muted font-monospace" style="font-size: 0.75rem;">RISK SCORE (0 - 100)</div>
+                <div class="mt-2">
+                    <span class="badge-risk badge-risk-{{ lake.risk_level.lower() }} px-3 py-1" style="font-size: 0.85rem;">
+                        {{ lake.risk_level }} SEVERITY
+                    </span>
+                </div>
+            </div>
+
+            <div class="p-3 bg-dark rounded border border-secondary text-start" style="font-size: 0.75rem;">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Model Confidence:</span>
+                    <strong class="text-white">{{ risk_data.confidence }}%</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Inference Latency:</span>
+                    <span class="text-white font-monospace">18 ms</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Algorithm:</span>
+                    <span class="text-info">Random Forest Ensemble</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ENVIRONMENTAL TELEMETRY & HISTORICAL TREND CHART -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-7">
+        <div class="risk-card h-100">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-chart-line text-primary"></i>
+                    <span>WATER LEVEL & PRECIPITATION TREND (RECENT READINGS)</span>
+                </div>
+                <span class="badge bg-dark border border-secondary text-secondary">Historical Telemetry</span>
+            </div>
+            <div style="height: 280px; position: relative;">
+                <canvas id="lakeTrendChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature Contribution Breakdown -->
+    <div class="col-xl-5">
+        <div class="risk-card h-100">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-brain text-info"></i>
+                    <span>MODEL FEATURE CONTRIBUTION</span>
+                </div>
+                <span class="badge bg-dark border border-secondary text-secondary">Relative Weights</span>
+            </div>
+            <div class="d-flex flex-column gap-2" style="font-size: 0.75rem;">
+                {% for feat, weight in risk_data.feature_importance.items() %}
+                <div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-secondary text-uppercase">{{ feat|replace('_', ' ') }}</span>
+                        <span class="text-white font-monospace">{{ weight }}%</span>
+                    </div>
+                    <div class="progress" style="height: 5px; background: #0b1324;">
+                        <div class="progress-bar bg-info" style="width: {{ weight * 2.5 }}%;"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TELEMETRY SENSOR LOGS & NEARBY INFRASTRUCTURE -->
+<div class="row g-3">
+    <!-- Telemetry Log Table -->
+    <div class="col-lg-8">
+        <div class="risk-card">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-satellite-dish text-success"></i>
+                    <span>RECENT MULTI-VARIABLE MEASUREMENTS</span>
+                </div>
+                <span class="badge bg-dark border border-secondary text-secondary">Simulated Telemetry</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table-risk">
+                    <thead>
+                        <tr>
+                            <th>Timestamp (UTC)</th>
+                            <th>Rainfall</th>
+                            <th>Temp</th>
+                            <th>Ice Melt</th>
+                            <th>Stability</th>
+                            <th>Terrain Mov.</th>
+                            <th>Seismic</th>
+                            <th>Water Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in measurements %}
+                        <tr>
+                            <td class="font-monospace text-secondary" style="font-size: 0.72rem;">{{ m.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td class="text-white">{{ m.rainfall }} mm</td>
+                            <td class="text-white">{{ m.temperature }} °C</td>
+                            <td class="text-white">{{ m.ice_melt }} cm/d</td>
+                            <td class="{% if m.glacier_stability < 50 %}text-danger{% else %}text-success{% endif %}">{{ m.glacier_stability }}%</td>
+                            <td class="{% if m.terrain_movement > 10 %}text-warning{% else %}text-secondary{% endif %}">{{ m.terrain_movement }} mm/d</td>
+                            <td class="text-secondary">{{ m.seismic_activity }} M</td>
+                            <td class="fw-bold text-white">{{ m.water_level }} m</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Downstream Infrastructure Vulnerability -->
+    <div class="col-lg-4">
+        <div class="risk-card">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-bridge-water text-warning"></i>
+                    <span>NEARBY VULNERABLE ASSETS</span>
+                </div>
+            </div>
+            <div class="d-flex flex-column gap-2">
+                {% for inf in infrastructure %}
+                <div class="p-2 rounded bg-dark border border-secondary">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-white fw-bold" style="font-size: 0.78rem;">{{ inf.name }}</span>
+                        <span class="badge bg-secondary" style="font-size: 0.65rem;">{{ inf.type }}</span>
+                    </div>
+                    <div class="text-muted" style="font-size: 0.7rem;">{{ inf.location }}</div>
+                    <div class="d-flex justify-content-between mt-1 pt-1 border-top border-secondary" style="font-size: 0.68rem;">
+                        <span class="text-muted">Condition: <strong class="text-white">{{ inf.condition }}</strong></span>
+                        <span class="text-{% if inf.status == 'OPERATIONAL' %}success{% else %}warning{% endif %} fw-bold">{{ inf.status }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Render Lake Trend Chart
+    const ctx = document.getElementById('lakeTrendChart').getContext('2d');
+    const dates = [{% for m in measurements|reverse %}'{{ m.timestamp.strftime("%m/%d %H:%M") }}',{% endfor %}];
+    const waterLevels = [{% for m in measurements|reverse %}{{ m.water_level }},{% endfor %}];
+    const rainfalls = [{% for m in measurements|reverse %}{{ m.rainfall }},{% endfor %}];
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates.length ? dates : ['T-4', 'T-3', 'T-2', 'T-1', 'Now'],
+            datasets: [
+                {
+                    label: 'Water Depth (m)',
+                    data: waterLevels.length ? waterLevels : [82, 83, 83.5, 84, {{ lake.water_level }}],
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                    fill: true,
+                    tension: 0.3,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Rainfall (mm)',
+                    data: rainfalls.length ? rainfalls : [12, 18, 35, 42, 60],
+                    borderColor: '#06b6d4',
+                    borderDash: [5, 5],
+                    fill: false,
+                    tension: 0.3,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    ticks: { color: '#94a3b8' },
+                    grid: { color: 'rgba(255,255,255,0.05)' }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    ticks: { color: '#06b6d4' },
+                    grid: { drawOnChartArea: false }
+                }
+            },
+            plugins: {
+                legend: { labels: { color: '#cbd5e1' } }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

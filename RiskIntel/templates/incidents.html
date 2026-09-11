@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Emergency Incident Operations Log{% endblock %}
+{% block header_title %}Tactical Incident Operations & Timeline{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="text-white fw-bold mb-1">On-Ground Incident Log</h4>
+        <p class="text-muted mb-0" style="font-size: 0.8rem;">Incident classification, status tracking, and tactical operational deployments.</p>
+    </div>
+    {% if session.get('role') != 'VIEWER' %}
+    <button class="btn btn-risk-primary" data-bs-toggle="modal" data-bs-target="#newIncidentModal">
+        <i class="fa-solid fa-plus me-1"></i> Register New Incident
+    </button>
+    {% endif %}
+</div>
+
+<!-- Incidents Table & Status Management -->
+<div class="risk-card p-0 overflow-hidden mb-4">
+    <div class="table-responsive">
+        <table class="table-risk" id="incidents-table">
+            <thead>
+                <tr>
+                    <th>Incident ID</th>
+                    <th>Hazard / Type</th>
+                    <th>Location</th>
+                    <th>Severity</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>Logged At</th>
+                    <th class="text-end">Manage Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inc in incidents %}
+                <tr>
+                    <td class="font-monospace fw-bold text-white">{{ inc.incident_id }}</td>
+                    <td class="fw-semibold text-white">
+                        <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> {{ inc.hazard }}
+                    </td>
+                    <td class="text-secondary">{{ inc.location }}</td>
+                    <td>
+                        <span class="badge-risk badge-risk-{{ inc.severity.lower() }}">{{ inc.severity }}</span>
+                    </td>
+                    <td class="text-white" style="font-size: 0.78rem; max-width: 250px;">{{ inc.description }}</td>
+                    <td>
+                        <span class="badge {% if inc.status == 'ACTIVE' %}bg-danger{% elif inc.status == 'CONTAINED' %}bg-warning text-dark{% elif inc.status == 'RESOLVED' %}bg-success{% else %}bg-secondary{% endif %}">
+                            {{ inc.status }}
+                        </span>
+                    </td>
+                    <td class="font-monospace text-muted" style="font-size: 0.72rem;">{{ inc.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td class="text-end">
+                        {% if session.get('role') != 'VIEWER' %}
+                        <div class="dropdown d-inline-block">
+                            <button class="btn btn-sm btn-risk-outline py-1 px-2 dropdown-toggle" data-bs-toggle="dropdown">
+                                Set Status
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end modal-content-risk">
+                                <li><a class="dropdown-item text-secondary" href="javascript:void(0)" onclick="updateIncidentStatus({{ inc.id }}, 'DETECTED')">DETECTED</a></li>
+                                <li><a class="dropdown-item text-info" href="javascript:void(0)" onclick="updateIncidentStatus({{ inc.id }}, 'VERIFIED')">VERIFIED</a></li>
+                                <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="updateIncidentStatus({{ inc.id }}, 'ACTIVE')">ACTIVE</a></li>
+                                <li><a class="dropdown-item text-warning" href="javascript:void(0)" onclick="updateIncidentStatus({{ inc.id }}, 'CONTAINED')">CONTAINED</a></li>
+                                <li><a class="dropdown-item text-success" href="javascript:void(0)" onclick="updateIncidentStatus({{ inc.id }}, 'RESOLVED')">RESOLVED</a></li>
+                            </ul>
+                        </div>
+                        {% else %}
+                        <span class="text-muted" style="font-size: 0.72rem;">View Only</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Tactical Incident Timeline -->
+<div class="risk-card">
+    <div class="card-title-bar">
+        <div class="card-title-text">
+            <i class="fa-solid fa-timeline text-primary"></i>
+            <span>TACTICAL INCIDENT TIMELINE OVERVIEW</span>
+        </div>
+        <span class="badge bg-secondary" style="font-size: 0.65rem;">Synchronized</span>
+    </div>
+    <div class="incident-timeline-full p-2">
+        {% for inc in incidents %}
+        <div class="d-flex gap-3 mb-3">
+            <div class="d-flex flex-column align-items-center" style="width: 24px;">
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-white" 
+                     style="width: 24px; height: 24px; background: {% if inc.severity == 'CRITICAL' %}#ef4444{% elif inc.severity == 'HIGH' %}#f97316{% else %}#3b82f6{% endif %}; font-size: 0.65rem;">
+                    <i class="fa-solid fa-exclamation"></i>
+                </div>
+                <div class="flex-grow-1 border-start border-secondary my-1"></div>
+            </div>
+            <div class="flex-grow-1 p-3 rounded bg-dark border border-secondary">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-white fw-bold">{{ inc.incident_id }}: {{ inc.hazard }} &bull; {{ inc.location }}</span>
+                    <span class="font-monospace text-muted" style="font-size: 0.7rem;">{{ inc.created_at.strftime('%H:%M:%S UTC') }}</span>
+                </div>
+                <div class="text-secondary" style="font-size: 0.76rem;">{{ inc.description }}</div>
+                <div class="mt-2 d-flex gap-2 align-items-center">
+                    <span class="badge-risk badge-risk-{{ inc.severity.lower() }}">{{ inc.severity }}</span>
+                    <span class="badge bg-secondary font-monospace">{{ inc.status }}</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Register Incident Modal -->
+{% if session.get('role') != 'VIEWER' %}
+<div class="modal fade" id="newIncidentModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-risk">
+            <div class="modal-header modal-header-risk">
+                <h5 class="modal-title text-white fw-bold"><i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>Register Field Incident</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('incidents_view') }}">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary" style="font-size: 0.75rem;">HAZARD / PHENOMENON</label>
+                        <select name="hazard" class="form-select form-select-risk">
+                            <option value="GLOF Flash Surge">GLOF Flash Surge</option>
+                            <option value="Moraine Retaining Wall Breach">Moraine Retaining Wall Breach</option>
+                            <option value="Bridge / Highway Washout">Bridge / Highway Washout</option>
+                            <option value="Hydro Turbine Silt Inundation">Hydro Turbine Silt Inundation</option>
+                            <option value="Debris Mudslide">Debris Mudslide</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary" style="font-size: 0.75rem;">SECTOR LOCATION</label>
+                        <input type="text" name="location" class="form-control form-control-risk" placeholder="e.g., Lachen Foot Bridge Sector" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary" style="font-size: 0.75rem;">SEVERITY</label>
+                        <select name="severity" class="form-select form-select-risk">
+                            <option value="CRITICAL">CRITICAL</option>
+                            <option value="HIGH" selected>HIGH</option>
+                            <option value="MODERATE">MODERATE</option>
+                            <option value="LOW">LOW</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary" style="font-size: 0.75rem;">TACTICAL DESCRIPTION</label>
+                        <textarea name="description" class="form-control form-control-risk" rows="3" placeholder="Describe damage extent, blocked access, and stranded populations..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer modal-footer-risk">
+                    <button type="button" class="btn btn-sm btn-risk-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-risk-primary"><i class="fa-solid fa-check me-1"></i> Register Incident</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function updateIncidentStatus(incId, newStatus) {
+    try {
+        const res = await fetch(`/api/incidents/${incId}/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(`Incident status updated to ${newStatus}`, 'success');
+            setTimeout(() => window.location.reload(), 600);
+        } else {
+            showToast(data.error || 'Failed to update incident', 'danger');
+        }
+    } catch (e) {
+        showToast('Network error updating incident status', 'danger');
+    }
+}
+</script>
+{% endblock %}

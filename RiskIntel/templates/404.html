@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}404 — Sector Target Not Found{% endblock %}
+{% block header_title %}404 Error{% endblock %}
+
+{% block content %}
+<div class="risk-card text-center py-5">
+    <div class="mb-3">
+        <i class="fa-solid fa-compass-drafting fa-4x text-warning"></i>
+    </div>
+    <h2 class="text-white fw-bold mb-2">404: SECTOR COORDINATE NOT FOUND</h2>
+    <p class="text-secondary mb-4" style="max-width: 480px; margin: 0 auto; font-size: 0.85rem;">
+        The requested tactical dashboard target, telemetry probe, or resource record does not exist or has been decommissioned from the platform.
+    </p>
+    <div>
+        <a href="{{ url_for('dashboard_view') }}" class="btn btn-risk-primary">
+            <i class="fa-solid fa-house me-1"></i> Return to Command Center
+        </a>
+    </div>
+</div>
+{% endblock %}

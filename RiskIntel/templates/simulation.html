@@ -1,0 +1,397 @@
+{% extends "base.html" %}
+
+{% block title %}Emergency Simulation Center — 23-Step GLOF Scenario{% endblock %}
+{% block header_title %}Emergency Simulation Command Center{% endblock %}
+
+{% block content %}
+<!-- Top Emergency Scenario Header -->
+<div class="risk-card p-3 mb-4" style="background: linear-gradient(90deg, #162033 0%, #0d1726 100%); border-left: 4px solid #ef4444;">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-danger text-white"><i class="fa-solid fa-triangle-exclamation me-1"></i> SIMULATED DATA — DEMO SCENARIO</span>
+                <span class="text-white fw-bold font-monospace" id="sim-current-step-num">STEP {{ sim_state.current_step }} / 23</span>
+            </div>
+            <h4 class="text-white fw-bold mb-1" id="sim-current-step-title">
+                {% if sim_state.current_step == 0 %}
+                Baseline Monitoring (Standby)
+                {% else %}
+                Rapid Environmental Deterioration & GLOF Outburst
+                {% endif %}
+            </h4>
+            <p class="text-secondary mb-0" id="sim-current-step-desc" style="font-size: 0.82rem;">
+                Target: South Lhonak Lake (Sikkim) &bull; Downstream Corridor: Chungthang Valley, Dikchu Reach, and Singtam Basin.
+            </p>
+        </div>
+
+        <!-- Simulation Controls -->
+        <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-risk-primary" onclick="RiskSimulation.start()">
+                <i class="fa-solid fa-play me-1"></i> START SIMULATION
+            </button>
+            <button class="btn btn-risk-outline text-warning" onclick="RiskSimulation.nextStep()">
+                <i class="fa-solid fa-forward-step me-1"></i> Next Step
+            </button>
+            <button class="btn btn-risk-outline" id="btn-sim-autorun" onclick="RiskSimulation.autoRun()">
+                <i class="fa-solid fa-forward-fast me-1"></i> Auto Run
+            </button>
+            <button class="btn btn-risk-outline text-danger" onclick="RiskSimulation.reset()">
+                <i class="fa-solid fa-rotate-left me-1"></i> Reset
+            </button>
+        </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress mt-3" style="height: 7px; background: #070d18;">
+        {% set progress_pct = (sim_state.current_step / 23 * 100)|round(1) %}
+        <div class="progress-bar bg-danger" id="sim-progress-bar" role="progressbar" style="width: {{ progress_pct }}%;"></div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- LEFT: 23-STEP VERTICAL TIMELINE -->
+    <div class="col-lg-6">
+        <div class="risk-card p-3" style="max-height: 720px; overflow-y: auto;">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-list-ol text-primary"></i>
+                    <span>23-STEP EMERGENCY ESCALATION SEQUENCE</span>
+                </div>
+                <span class="badge bg-secondary" style="font-size: 0.65rem;">Chronological Workflow</span>
+            </div>
+
+            <div class="sim-timeline">
+                <!-- 23 Distinct Steps -->
+                <div class="sim-timeline-item {% if sim_state.current_step > 1 %}completed{% elif sim_state.current_step == 1 %}active{% endif %}">
+                    <div class="sim-timeline-node">1</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 1: Environmental Telemetry Deteriorates</span>
+                            <span class="badge bg-secondary" style="font-size: 0.65rem;">TELEMETRY</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Sensor anomalies recorded at South Lhonak Lake sub-basin.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 2 %}completed{% elif sim_state.current_step == 2 %}active{% endif %}">
+                    <div class="sim-timeline-node">2</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 2: Water Level Rises Rapidly</span>
+                            <span class="badge bg-secondary" style="font-size: 0.65rem;">WATER DEPTH</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Lake water level rises by +2.8 meters due to glacial discharge.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 3 %}completed{% elif sim_state.current_step == 3 %}active{% endif %}">
+                    <div class="sim-timeline-node">3</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 3: Torrential Rainfall Increases</span>
+                            <span class="badge bg-secondary" style="font-size: 0.65rem;">PRECIPITATION</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Heavy precipitation intensifies to 148 mm/24h over high catchment.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 4 %}completed{% elif sim_state.current_step == 4 %}active{% endif %}">
+                    <div class="sim-timeline-node">4</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 4: Glacial Ice Melt Accelerates</span>
+                            <span class="badge bg-secondary" style="font-size: 0.65rem;">ICE MELT</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Thermal spike triggers rapid ice melt reaching 32 cm/day.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 5 %}completed{% elif sim_state.current_step == 5 %}active{% endif %}">
+                    <div class="sim-timeline-node">5</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 5: Glacier Stability Decreases</span>
+                            <span class="badge bg-secondary" style="font-size: 0.65rem;">STABILITY</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Terminal moraine structural stability index collapses to 32%.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 6 %}completed{% elif sim_state.current_step == 6 %}active{% endif %}">
+                    <div class="sim-timeline-node">6</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 6: Moraine Terrain Movement Increases</span>
+                            <span class="badge bg-secondary" style="font-size: 0.65rem;">TERRAIN</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Displacement sensors register 34 mm/day moraine embankment slippage.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 7 %}completed{% elif sim_state.current_step == 7 %}active{% endif %}">
+                    <div class="sim-timeline-node">7</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 7: AI Risk Engine Inference Triggered</span>
+                            <span class="badge bg-info text-dark" style="font-size: 0.65rem;">AI INFERENCE</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Multi-variable Random Forest model executes predictive inference.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 8 %}completed{% elif sim_state.current_step == 8 %}active{% endif %}">
+                    <div class="sim-timeline-node">8</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 8: Risk Escalates to HIGH (71.4)</span>
+                            <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">HIGH THREAT</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Dashboard updates: Lake South Lhonak elevated to Level III surveillance.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 9 %}completed{% elif sim_state.current_step == 9 %}active{% endif %}">
+                    <div class="sim-timeline-node">9</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 9: Risk Escalates to CRITICAL (94.2)</span>
+                            <span class="badge bg-danger" style="font-size: 0.65rem;">CRITICAL</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Catastrophic moraine breach imminent; emergency siren trigger initiated.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 10 %}completed{% elif sim_state.current_step == 10 %}active{% endif %}">
+                    <div class="sim-timeline-node">10</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 10: Downstream Impact Generated</span>
+                            <span class="badge bg-secondary" style="font-size: 0.65rem;">IMPACT</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Hydrodynamic wave speed calculated at 38 km/h down Teesta gorge.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 11 %}completed{% elif sim_state.current_step == 11 %}active{% endif %}">
+                    <div class="sim-timeline-node">11</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 11: Affected Hazard Zones Identified</span>
+                            <span class="badge bg-secondary" style="font-size: 0.65rem;">ZONES</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Chungthang Valley, Dikchu Reach, and Singtam Lowlands flagged.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 12 %}completed{% elif sim_state.current_step == 12 %}active{% endif %}">
+                    <div class="sim-timeline-node">12</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 12: Affected Population Estimated</span>
+                            <span class="badge bg-secondary" style="font-size: 0.65rem;">POPULATION</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">14,200 downstream residents in direct flood inundation line.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 13 %}completed{% elif sim_state.current_step == 13 %}active{% endif %}">
+                    <div class="sim-timeline-node">13</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 13: Emergency Alert Recommendation</span>
+                            <span class="badge bg-info text-dark" style="font-size: 0.65rem;">RECOMMENDED</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">AI generates recommended alert ALT-SIM-901 for immediate review.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 14 %}completed{% elif sim_state.current_step == 14 %}active{% endif %}">
+                    <div class="sim-timeline-node">14</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 14: Authority Approval Request</span>
+                            <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">PENDING</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Dispatched to National Disaster Authority pending queue for clearance.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 15 %}completed{% elif sim_state.current_step == 15 %}active{% endif %}">
+                    <div class="sim-timeline-node">15</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 15: Authority Approves Alert</span>
+                            <span class="badge bg-success" style="font-size: 0.65rem;">APPROVED</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">National Authority Chief authorizes emergency flash flood warning.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 16 %}completed{% elif sim_state.current_step == 16 %}active{% endif %}">
+                    <div class="sim-timeline-node">16</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 16: Alert Becomes ACTIVE Broadcast</span>
+                            <span class="badge bg-danger" style="font-size: 0.65rem;">BROADCAST</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Public sirens initiated; SMS flood advisories sent to downstream districts.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 17 %}completed{% elif sim_state.current_step == 17 %}active{% endif %}">
+                    <div class="sim-timeline-node">17</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 17: Evacuation Plan Activated</span>
+                            <span class="badge bg-primary" style="font-size: 0.65rem;">EVACUATION</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Chungthang Valley Riparian evacuation corridor moves to ACTIVE status.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 18 %}completed{% elif sim_state.current_step == 18 %}active{% endif %}">
+                    <div class="sim-timeline-node">18</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 18: SOS Distress Calls Appear</span>
+                            <span class="badge bg-danger" style="font-size: 0.65rem;">SOS</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Critical civilian distress call logged from Chungthang Lower Hamlet.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 19 %}completed{% elif sim_state.current_step == 19 %}active{% endif %}">
+                    <div class="sim-timeline-node">19</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 19: Rescue Teams Deploy</span>
+                            <span class="badge bg-success" style="font-size: 0.65rem;">DEPLOYED</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Teams Alpha-01 and Bravo-02 deployed with swiftwater gear.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 20 %}completed{% elif sim_state.current_step == 20 %}active{% endif %}">
+                    <div class="sim-timeline-node">20</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 20: Shelter Occupancy Spikes</span>
+                            <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">SHELTERS</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Chungthang High School refuge reaches near-capacity intake (425 / 450).</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 21 %}completed{% elif sim_state.current_step == 21 %}active{% endif %}">
+                    <div class="sim-timeline-node">21</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 21: Relief Resource Shortage Flagged</span>
+                            <span class="badge bg-danger" style="font-size: 0.65rem;">SHORTAGE</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Deficit alert triggered for potable drinking water and emergency trauma kits.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step > 22 %}completed{% elif sim_state.current_step == 22 %}active{% endif %}">
+                    <div class="sim-timeline-node">22</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 22: Major Incident INC-SIM-01 Created</span>
+                            <span class="badge bg-danger" style="font-size: 0.65rem;">INCIDENT</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Peak flood wave hits Chungthang Dam spillway; timeline synchronized.</div>
+                    </div>
+                </div>
+
+                <div class="sim-timeline-item {% if sim_state.current_step >= 23 %}completed{% endif %}">
+                    <div class="sim-timeline-node">23</div>
+                    <div class="sim-step-card">
+                        <div class="d-flex justify-content-between text-white fw-bold" style="font-size: 0.8rem;">
+                            <span>Step 23: Flood Wave Passes & Recovery Begins</span>
+                            <span class="badge bg-success" style="font-size: 0.65rem;">RECOVERY</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">Lake risk recedes to moderate; drainage holds; recovery phase initiates.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: LIVE TACTICAL STATUS & LOG TERMINAL -->
+    <div class="col-lg-6">
+        <!-- Live State Alterations Visualizer -->
+        <div class="risk-card mb-3">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-satellite text-info"></i>
+                    <span>LIVE CONNECTED SYSTEM STATE</span>
+                </div>
+                <span class="badge bg-dark border border-secondary text-white">Interactive Matrix</span>
+            </div>
+
+            <div class="row g-2">
+                <div class="col-6">
+                    <div class="p-2 rounded bg-dark border border-secondary">
+                        <div class="text-muted" style="font-size: 0.68rem;">SOUTH LHONAK RISK</div>
+                        <div class="text-danger fw-bold font-monospace" style="font-size: 1.1rem;">
+                            {% if sim_state.current_step >= 9 %}94.2 CRITICAL{% elif sim_state.current_step >= 8 %}71.4 HIGH{% else %}62.0 HIGH{% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-2 rounded bg-dark border border-secondary">
+                        <div class="text-muted" style="font-size: 0.68rem;">ALERT STATUS</div>
+                        <div class="text-white fw-bold font-monospace" style="font-size: 1.1rem;">
+                            {% if sim_state.current_step >= 16 %}<span class="text-danger">ACTIVE BROADCAST</span>{% elif sim_state.current_step >= 14 %}<span class="text-warning">PENDING APPROVAL</span>{% else %}MONITORED{% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-2 rounded bg-dark border border-secondary">
+                        <div class="text-muted" style="font-size: 0.68rem;">EVACUATION SECTOR</div>
+                        <div class="text-white fw-bold font-monospace" style="font-size: 1.1rem;">
+                            {% if sim_state.current_step >= 17 %}<span class="text-danger">ACTIVE CORRIDOR</span>{% else %}PLANNED{% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-2 rounded bg-dark border border-secondary">
+                        <div class="text-muted" style="font-size: 0.68rem;">RESCUE ALPHA-01</div>
+                        <div class="text-white fw-bold font-monospace" style="font-size: 1.1rem;">
+                            {% if sim_state.current_step >= 19 %}<span class="text-success">DEPLOYED</span>{% else %}STANDBY{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terminal Log Box -->
+        <div class="risk-card p-0 overflow-hidden d-flex flex-column" style="height: 480px;">
+            <div class="card-title-bar px-3 pt-3 mb-0">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-terminal text-success"></i>
+                    <span>SIMULATION EVENT DISPATCH TERMINAL</span>
+                </div>
+                <span class="badge bg-secondary font-monospace" style="font-size: 0.65rem;">live stream</span>
+            </div>
+            <div id="sim-log-terminal" class="p-3 bg-black text-light font-monospace" style="flex: 1; overflow-y: auto; font-size: 0.75rem; line-height: 1.6;">
+                <div class="text-secondary">[SYSTEM] Emergency Simulation Center initialized.</div>
+                <div class="text-secondary">[SCENARIO] Rapid Environmental Deterioration & GLOF Outburst Sequence ready.</div>
+                {% if sim_state.current_step > 0 %}
+                <div class="text-warning">[STATUS] Current Simulation Step: {{ sim_state.current_step }} / 23.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Initial fetch of simulation status
+    RiskSimulation.fetchStatus();
+});
+</script>
+{% endblock %}

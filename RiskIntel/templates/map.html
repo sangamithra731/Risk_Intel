@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+
+{% block title %}GIS Intelligence & Multi-Hazard Spatial Matrix{% endblock %}
+{% block header_title %}GIS Spatial Intelligence Platform{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <!-- GIS MAP CONTAINER -->
+    <div class="col-lg-9">
+        <div class="risk-card p-0 overflow-hidden d-flex flex-column" style="min-height: 680px;">
+            <!-- Filter & Search Bar -->
+            <div class="p-3 border-bottom border-secondary bg-dark d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 320px;">
+                    <span class="text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" id="gis-search-input" class="form-control form-control-risk py-1" placeholder="Search lake, zone, asset...">
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <select id="gis-risk-filter" class="form-select form-select-risk py-1" style="width: 140px;">
+                        <option value="ALL">All Risk Levels</option>
+                        <option value="CRITICAL">Critical Only</option>
+                        <option value="HIGH">High Only</option>
+                        <option value="MODERATE">Moderate</option>
+                        <option value="LOW">Low</option>
+                    </select>
+
+                    <select id="gis-layer-filter" class="form-select form-select-risk py-1" style="width: 150px;">
+                        <option value="ALL">All Hazard Layers</option>
+                        <option value="LAKES">Glacial Lakes</option>
+                        <option value="INCIDENTS">Active Incidents</option>
+                        <option value="SHELTERS">Safe Shelters</option>
+                        <option value="RESCUE">Rescue Teams</option>
+                    </select>
+
+                    <button class="btn btn-sm btn-risk-outline py-1" id="gis-reset-btn" title="Reset View">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Map Viewport -->
+            <div id="gis-map" style="flex: 1; min-height: 600px;"></div>
+        </div>
+    </div>
+
+    <!-- GIS SIDEBAR CONTROLS & INSPECTOR -->
+    <div class="col-lg-3">
+        <!-- Layer Toggles -->
+        <div class="risk-card mb-3">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-layer-group text-primary"></i>
+                    <span>GIS SPATIAL LAYERS</span>
+                </div>
+            </div>
+            <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" id="layerToggleLakes" checked>
+                <label class="form-check-label text-white" for="layerToggleLakes">
+                    <i class="fa-solid fa-water text-info me-1"></i> Glacial Lakes (10)
+                </label>
+            </div>
+            <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" id="layerToggleRiskZones" checked>
+                <label class="form-check-label text-white" for="layerToggleRiskZones">
+                    <i class="fa-solid fa-circle-dot text-danger me-1"></i> GLOF Inundation Buffer Zones
+                </label>
+            </div>
+            <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" id="layerToggleIncidents" checked>
+                <label class="form-check-label text-white" for="layerToggleIncidents">
+                    <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> Verified Incidents
+                </label>
+            </div>
+            <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" id="layerToggleShelters" checked>
+                <label class="form-check-label text-white" for="layerToggleShelters">
+                    <i class="fa-solid fa-tents text-primary me-1"></i> Designated Shelters
+                </label>
+            </div>
+            <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" id="layerToggleRescue" checked>
+                <label class="form-check-label text-white" for="layerToggleRescue">
+                    <i class="fa-solid fa-truck-medical text-success me-1"></i> Rescue Deployments
+                </label>
+            </div>
+        </div>
+
+        <!-- GIS Legend -->
+        <div class="risk-card mb-3">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-map-pin text-secondary"></i>
+                    <span>MAP LEGEND</span>
+                </div>
+            </div>
+            <div class="d-flex flex-column gap-2" style="font-size: 0.78rem;">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width: 12px; height: 12px; border-radius: 50%; background: #ef4444; border: 1px solid #fff;"></span>
+                    <span class="text-white">Critical GLOF Threat (&gt;75)</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width: 12px; height: 12px; border-radius: 50%; background: #f97316; border: 1px solid #fff;"></span>
+                    <span class="text-white">High GLOF Threat (51-75)</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width: 12px; height: 12px; border-radius: 50%; background: #f59e0b; border: 1px solid #fff;"></span>
+                    <span class="text-white">Moderate Threat (26-50)</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; border: 1px solid #fff;"></span>
+                    <span class="text-white">Low / Normal (&lt;26)</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width: 12px; height: 12px; border-radius: 2px; background: rgba(239, 68, 68, 0.2); border: 1px dashed #ef4444;"></span>
+                    <span class="text-white">Downstream Surge Impact Radius</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Selected Entity Inspector -->
+        <div class="risk-card">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-circle-info text-info"></i>
+                    <span>SPATIAL INSPECTOR</span>
+                </div>
+            </div>
+            <div id="gis-inspector-content" class="text-muted" style="font-size: 0.78rem;">
+                Click any marker on the map to inspect terrain properties, telemetry, and response logistics.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const map = L.map('gis-map').setView([28.2, 88.0], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 15
+    }).addTo(map);
+
+    const layerGroups = {
+        lakes: L.layerGroup().addTo(map),
+        riskZones: L.layerGroup().addTo(map),
+        incidents: L.layerGroup().addTo(map),
+        shelters: L.layerGroup().addTo(map),
+        rescue: L.layerGroup().addTo(map)
+    };
+
+    let allLakes = [];
+
+    fetch('/api/dashboard')
+        .then(res => res.json())
+        .then(data => {
+            allLakes = data.lakes;
+
+            renderLayers(data);
+
+            if (data.lakes.length > 0) {
+                const group = new L.featureGroup(data.lakes.map(l => L.marker([l.latitude, l.longitude])));
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        });
+
+    function renderLayers(data, riskFilter = 'ALL', searchTxt = '') {
+        // Clear layers
+        Object.values(layerGroups).forEach(lg => lg.clearLayers());
+
+        // 1. Lakes & Risk Zones
+        data.lakes.forEach(l => {
+            if (riskFilter !== 'ALL' && l.risk_level !== riskFilter) return;
+            if (searchTxt && !l.name.toLowerCase().includes(searchTxt) && !l.location.toLowerCase().includes(searchTxt)) return;
+
+            const color = getRiskColor(l.risk_level);
+            const marker = L.marker([l.latitude, l.longitude], {
+                icon: getCustomMarkerIcon(color, 'fa-solid fa-water')
+            });
+
+            marker.on('click', () => {
+                inspectEntity('LAKE', l);
+            });
+
+            marker.bindPopup(`
+                <div style="font-size: 0.8rem;">
+                    <strong style="color: #60a5fa;">${l.name}</strong><br>
+                    <span>Location: ${l.location}</span><br>
+                    <span>Elevation: ${l.elevation} m</span><br>
+                    <span>Water Level: ${l.water_level} m (${l.water_level_change >= 0 ? '+' : ''}${l.water_level_change} m/24h)</span><br>
+                    <span>Risk Score: <strong style="color: ${color}">${l.risk_score} (${l.risk_level})</strong></span><br>
+                    <a href="/lake/${l.id}" class="btn btn-sm btn-primary py-0 px-2 mt-2 text-white">Full Telemetry</a>
+                </div>
+            `);
+            layerGroups.lakes.addLayer(marker);
+
+            // Add hazard buffer radius if high/critical
+            if (l.risk_level === 'CRITICAL' || l.risk_level === 'HIGH') {
+                const circle = L.circle([l.latitude, l.longitude], {
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.15,
+                    radius: l.risk_level === 'CRITICAL' ? 18000 : 9000,
+                    weight: 1,
+                    dashArray: '4, 4'
+                });
+                layerGroups.riskZones.addLayer(circle);
+            }
+        });
+
+        // 2. Shelters
+        data.shelters.forEach(s => {
+            const marker = L.marker([s.latitude, s.longitude], {
+                icon: getCustomMarkerIcon('#3b82f6', 'fa-solid fa-tents')
+            });
+            marker.on('click', () => inspectEntity('SHELTER', s));
+            marker.bindPopup(`
+                <div style="font-size: 0.8rem;">
+                    <strong>${s.name}</strong><br>
+                    <span>Occupancy: ${s.occupied} / ${s.capacity}</span><br>
+                    <span class="badge bg-secondary">${s.status}</span>
+                </div>
+            `);
+            layerGroups.shelters.addLayer(marker);
+        });
+
+        // 3. Incidents
+        data.incidents.forEach(inc => {
+            // Place near Sikkim/Teesta basin for demo
+            const marker = L.marker([27.52 + (Math.random() - 0.5) * 0.4, 88.55 + (Math.random() - 0.5) * 0.4], {
+                icon: getCustomMarkerIcon('#ef4444', 'fa-solid fa-triangle-exclamation')
+            });
+            marker.bindPopup(`
+                <div style="font-size: 0.8rem;">
+                    <strong>${inc.incident_id}: ${inc.hazard}</strong><br>
+                    <span>${inc.location}</span><br>
+                    <span class="badge bg-danger">${inc.severity}</span>
+                </div>
+            `);
+            layerGroups.incidents.addLayer(marker);
+        });
+    }
+
+    function inspectEntity(type, entity) {
+        const inspector = document.getElementById('gis-inspector-content');
+        if (type === 'LAKE') {
+            inspector.innerHTML = `
+                <div class="mb-2">
+                    <span class="badge-risk badge-risk-${entity.risk_level.toLowerCase()} mb-1">${entity.risk_level} RISK</span>
+                    <h5 class="text-white fw-bold mb-0">${entity.name}</h5>
+                    <div class="text-muted">${entity.location}</div>
+                </div>
+                <div class="p-2 rounded bg-dark border border-secondary mb-2" style="font-size: 0.75rem;">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Elevation:</span>
+                        <strong class="text-white">${entity.elevation} m</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Lake Area:</span>
+                        <strong class="text-white">${entity.area} ha</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Water Level:</span>
+                        <strong class="text-white">${entity.water_level} m</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">AI Risk Score:</span>
+                        <strong class="text-danger">${entity.risk_score} / 100</strong>
+                    </div>
+                </div>
+                <a href="/lake/${entity.id}" class="btn btn-sm btn-risk-primary w-100 justify-content-center">
+                    <i class="fa-solid fa-eye me-1"></i> Open Lake Telemetry
+                </a>
+            `;
+        } else if (type === 'SHELTER') {
+            inspector.innerHTML = `
+                <div class="mb-2">
+                    <span class="badge bg-primary mb-1">${entity.status}</span>
+                    <h5 class="text-white fw-bold mb-0">${entity.name}</h5>
+                    <div class="text-muted">${entity.location}</div>
+                </div>
+                <div class="p-2 rounded bg-dark border border-secondary mb-2" style="font-size: 0.75rem;">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Capacity:</span>
+                        <strong class="text-white">${entity.capacity} persons</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Occupied:</span>
+                        <strong class="text-white">${entity.occupied} persons</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Available:</span>
+                        <strong class="text-success">${entity.capacity - entity.occupied} spots</strong>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    // Layer Checkboxes
+    document.getElementById('layerToggleLakes').addEventListener('change', e => {
+        e.target.checked ? map.addLayer(layerGroups.lakes) : map.removeLayer(layerGroups.lakes);
+    });
+    document.getElementById('layerToggleRiskZones').addEventListener('change', e => {
+        e.target.checked ? map.addLayer(layerGroups.riskZones) : map.removeLayer(layerGroups.riskZones);
+    });
+    document.getElementById('layerToggleIncidents').addEventListener('change', e => {
+        e.target.checked ? map.addLayer(layerGroups.incidents) : map.removeLayer(layerGroups.incidents);
+    });
+    document.getElementById('layerToggleShelters').addEventListener('change', e => {
+        e.target.checked ? map.addLayer(layerGroups.shelters) : map.removeLayer(layerGroups.shelters);
+    });
+
+    // Filters
+    document.getElementById('gis-risk-filter').addEventListener('change', e => {
+        fetch('/api/dashboard').then(r => r.json()).then(d => renderLayers(d, e.target.value, document.getElementById('gis-search-input').value));
+    });
+    document.getElementById('gis-search-input').addEventListener('input', e => {
+        fetch('/api/dashboard').then(r => r.json()).then(d => renderLayers(d, document.getElementById('gis-risk-filter').value, e.target.value.toLowerCase()));
+    });
+    document.getElementById('gis-reset-btn').addEventListener('click', () => {
+        document.getElementById('gis-search-input').value = '';
+        document.getElementById('gis-risk-filter').value = 'ALL';
+        fetch('/api/dashboard').then(r => r.json()).then(d => renderLayers(d));
+    });
+});
+</script>
+{% endblock %}

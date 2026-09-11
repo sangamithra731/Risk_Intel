@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Emergency Alerts & Authority Clearance{% endblock %}
+{% block header_title %}Emergency Early Warning & Authority Approval Hub{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="text-white fw-bold mb-1">Emergency Warning Dispatches</h4>
+        <p class="text-muted mb-0" style="font-size: 0.8rem;">Multi-agency warning life-cycle: Recommendation &rarr; Authority Review &rarr; Active Siren Broadcast.</p>
+    </div>
+    {% if session.get('role') != 'VIEWER' %}
+    <button class="btn btn-risk-primary" data-bs-toggle="modal" data-bs-target="#newAlertModal">
+        <i class="fa-solid fa-bullhorn me-1"></i> Draft Warning Advisory
+    </button>
+    {% endif %}
+</div>
+
+<!-- Filter Pills Bar -->
+<div class="risk-card p-3 mb-3">
+    <div class="row g-2 align-items-center">
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-text bg-dark border-secondary text-secondary"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="text" id="alert-search" class="form-control form-control-risk" placeholder="Filter alerts by hazard, location...">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select id="alert-status-filter" class="form-select form-select-risk">
+                <option value="ALL">All Statuses</option>
+                <option value="PENDING APPROVAL">Pending Authority Approval</option>
+                <option value="RECOMMENDED">AI Recommended</option>
+                <option value="ACTIVE">Active Broadcast</option>
+                <option value="RESOLVED">Resolved</option>
+                <option value="REJECTED">Rejected</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select id="alert-severity-filter" class="form-select form-select-risk">
+                <option value="ALL">All Severities</option>
+                <option value="CRITICAL">Critical</option>
+                <option value="HIGH">High</option>
+                <option value="MODERATE">Moderate</option>
+                <option value="LOW">Low</option>
+            </select>
+        </div>
+        <div class="col-md-2 text-end text-muted" style="font-size: 0.75rem;">
+            Total: <strong class="text-white">{{ alerts|length }}</strong> Alerts
+        </div>
+    </div>
+</div>
+
+<!-- Alerts Table -->
+<div class="risk-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table-risk" id="alerts-table">
+            <thead>
+                <tr>
+                    <th>Alert ID</th>
+                    <th>Hazard</th>
+                    <th>Target Zone</th>
+                    <th>Severity</th>
+                    <th>Advisory Details</th>
+                    <th>Status</th>
+                    <th>Authorized By</th>
+                    <th class="text-end">Authority Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in alerts %}
+                <tr data-status="{{ a.status }}" data-severity="{{ a.severity }}" data-text="{{ a.alert_id|lower }} {{ a.hazard|lower }} {{ a.location|lower }}">
+                    <td class="font-monospace fw-bold text-white">{{ a.alert_id }}</td>
+                    <td class="fw-semibold text-white">
+                        <i class="fa-solid fa-bell text-danger me-1"></i> {{ a.hazard }}
+                    </td>
+                    <td class="text-secondary">{{ a.location }}</td>
+                    <td>
+                        <span class="badge-risk badge-risk-{{ a.severity.lower() }}">{{ a.severity }}</span>
+                    </td>
+                    <td style="max-width: 280px;">
+                        <div class="text-white" style="font-size: 0.78rem;">{{ a.message }}</div>
+                        <div class="text-muted" style="font-size: 0.68rem;">Issued: {{ a.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                    </td>
+                    <td>
+                        {% if a.status == 'ACTIVE' %}
+                        <span class="badge bg-danger text-white"><i class="fa-solid fa-tower-broadcast me-1"></i> ACTIVE</span>
+                        {% elif a.status == 'PENDING APPROVAL' %}
+                        <span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i> PENDING APPROVAL</span>
+                        {% elif a.status == 'RECOMMENDED' %}
+                        <span class="badge bg-info text-dark"><i class="fa-solid fa-robot me-1"></i> RECOMMENDED</span>
+                        {% elif a.status == 'RESOLVED' %}
+                        <span class="badge bg-success"><i class="fa-solid fa-circle-check me-1"></i> RESOLVED</span>
+                        {% else %}
+                        <span class="badge bg-secondary"><i class="fa-solid fa-ban me-1"></i> REJECTED</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted font-monospace" style="font-size: 0.72rem;">
+                        {{ a.approved_by or 'Pending Approval' }}
+                    </td>
+                    <td class="text-end">
+                        {% if a.status in ['PENDING APPROVAL', 'RECOMMENDED'] and session.get('role') in ['ADMIN', 'AUTHORITY'] %}
+                        <div class="d-inline-flex gap-1">
+                            <button class="btn btn-sm btn-risk-primary py-1 px-2" onclick="handleAlertDecision({{ a.id }}, 'approve')" title="Authorize Alert">
+                                <i class="fa-solid fa-check me-1"></i> Approve
+                            </button>
+                            <button class="btn btn-sm btn-risk-outline py-1 px-2 text-danger" onclick="handleAlertDecision({{ a.id }}, 'reject')" title="Reject Alert">
+                                <i class="fa-solid fa-xmark"></i> Reject
+                            </button>
+                        </div>
+                        {% elif a.status == 'ACTIVE' %}
+                        <span class="text-success fw-bold" style="font-size: 0.72rem;"><i class="fa-solid fa-signal me-1"></i> Broadcast Live</span>
+                        {% else %}
+                        <span class="text-muted" style="font-size: 0.72rem;">Completed</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Draft Warning Advisory Modal -->
+{% if session.get('role') != 'VIEWER' %}
+<div class="modal fade" id="newAlertModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-risk">
+            <div class="modal-header modal-header-risk">
+                <h5 class="modal-title text-white fw-bold"><i class="fa-solid fa-bullhorn text-danger me-2"></i>Draft Emergency Advisory Alert</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('alerts_view') }}">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary" style="font-size: 0.75rem;">HAZARD TYPE</label>
+                        <select name="hazard" class="form-select form-select-risk">
+                            <option value="Glacial Lake Outburst Flood (GLOF)">Glacial Lake Outburst Flood (GLOF)</option>
+                            <option value="Moraine Wall Dam Collapse">Moraine Wall Dam Collapse</option>
+                            <option value="Flash Surge downstream">Flash Surge downstream</option>
+                            <option value="Ice Calving Impact Wave">Ice Calving Impact Wave</option>
+                            <option value="Heavy Riparian Debris Flow">Heavy Riparian Debris Flow</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary" style="font-size: 0.75rem;">TARGET REGION / BASIN</label>
+                        <input type="text" name="location" class="form-control form-control-risk" placeholder="e.g., Chungthang Valley, Lower Teesta" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary" style="font-size: 0.75rem;">SEVERITY CLASSIFICATION</label>
+                        <select name="severity" class="form-select form-select-risk">
+                            <option value="CRITICAL">CRITICAL — Red Evacuation</option>
+                            <option value="HIGH" selected>HIGH — Orange Pre-Alert</option>
+                            <option value="MODERATE">MODERATE — Yellow Advisory</option>
+                            <option value="LOW">LOW — Green Advisory</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary" style="font-size: 0.75rem;">ADVISORY MESSAGE</label>
+                        <textarea name="message" class="form-control form-control-risk" rows="3" placeholder="Specify threat specifics and recommended civilian response..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer modal-footer-risk">
+                    <button type="button" class="btn btn-sm btn-risk-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-risk-primary"><i class="fa-solid fa-paper-plane me-1"></i> Queue for Authority Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('alert-search');
+    const statusFilter = document.getElementById('alert-status-filter');
+    const severityFilter = document.getElementById('alert-severity-filter');
+    const rows = document.querySelectorAll('#alerts-table tbody tr');
+
+    function filterTable() {
+        const query = searchInput.value.toLowerCase();
+        const stat = statusFilter.value;
+        const sev = severityFilter.value;
+
+        rows.forEach(r => {
+            const matchesText = r.getAttribute('data-text').includes(query);
+            const matchesStatus = (stat === 'ALL' || r.getAttribute('data-status') === stat);
+            const matchesSev = (sev === 'ALL' || r.getAttribute('data-severity') === sev);
+            r.style.display = (matchesText && matchesStatus && matchesSev) ? '' : 'none';
+        });
+    }
+
+    searchInput.addEventListener('input', filterTable);
+    statusFilter.addEventListener('change', filterTable);
+    severityFilter.addEventListener('change', filterTable);
+});
+</script>
+{% endblock %}

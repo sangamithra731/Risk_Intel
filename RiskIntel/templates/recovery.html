@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Post-Disaster Recovery & Reconstruction Assessment{% endblock %}
+{% block header_title %}Post-Disaster Recovery & Reconstruction Assessment{% endblock %}
+
+{% block content %}
+<!-- Top Recovery Metrics -->
+<div class="row g-3 mb-4">
+    {% set resolved_count = resolved_incidents|length %}
+    {% set pct_resolved = ((resolved_count / total_incidents) * 100)|round(1) if total_incidents > 0 else 100 %}
+
+    <div class="col-sm-6 col-md-3">
+        <div class="stat-card" style="border-left: 3px solid #10b981;">
+            <div class="stat-label">
+                <span>Incident De-escalation</span>
+                <i class="fa-solid fa-circle-check text-success"></i>
+            </div>
+            <div class="stat-value text-success">{{ pct_resolved }}%</div>
+            <div class="stat-footer text-muted">{{ resolved_count }} / {{ total_incidents }} Incidents Contained</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">
+                <span>Infrastructure Restored</span>
+                <i class="fa-solid fa-wrench text-info"></i>
+            </div>
+            <div class="stat-value text-white">70 <span style="font-size: 0.9rem;">%</span></div>
+            <div class="stat-footer text-muted">7 of 10 Critical Lifelines Operational</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">
+                <span>Shelter Repatriation</span>
+                <i class="fa-solid fa-house-user text-primary"></i>
+            </div>
+            <div class="stat-value text-primary">45 <span style="font-size: 0.9rem;">%</span></div>
+            <div class="stat-footer text-muted">Displaced Returnees Transitioning</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">
+                <span>Supply Line Replenishment</span>
+                <i class="fa-solid fa-box-open text-warning"></i>
+            </div>
+            <div class="stat-value text-warning">82 <span style="font-size: 0.9rem;">%</span></div>
+            <div class="stat-footer text-muted">Stockpiles Restocking Scheduled</div>
+        </div>
+    </div>
+</div>
+
+<!-- INFRASTRUCTURE REHABILITATION MATRIX -->
+<div class="risk-card mb-4">
+    <div class="card-title-bar">
+        <div class="card-title-text">
+            <i class="fa-solid fa-bridge-water text-primary"></i>
+            <span>CRITICAL LIFELINE RECONSTRUCTION STATUS</span>
+        </div>
+        <span class="badge bg-secondary" style="font-size: 0.65rem;">Field Engineering Updates</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table-risk">
+            <thead>
+                <tr>
+                    <th>Asset Name</th>
+                    <th>Type</th>
+                    <th>Corridor Location</th>
+                    <th>Condition Grade</th>
+                    <th>Current Status</th>
+                    <th>Restoration Progress</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inf in infrastructure %}
+                <tr>
+                    <td class="fw-bold text-white">{{ inf.name }}</td>
+                    <td class="text-secondary">{{ inf.type }}</td>
+                    <td class="text-muted">{{ inf.location }}</td>
+                    <td>
+                        <span class="badge {% if inf.condition == 'GOOD' %}bg-success{% elif inf.condition == 'FAIR' %}bg-info text-dark{% elif inf.condition == 'COMPROMISED' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                            {{ inf.condition }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="text-white font-monospace">{{ inf.status }}</span>
+                    </td>
+                    <td style="min-width: 140px;">
+                        {% set p = 100 if inf.status == 'OPERATIONAL' else (60 if inf.status == 'DEGRADED' else (25 if inf.status == 'DAMAGED' else 10)) %}
+                        <div class="progress" style="height: 6px; background: #0c1424;">
+                            <div class="progress-bar {% if p == 100 %}bg-success{% elif p >= 50 %}bg-warning{% else %}bg-danger{% endif %}" style="width: {{ p }}%;"></div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- RESOLVED FIELD INCIDENTS ARCHIVE -->
+<div class="risk-card p-0 overflow-hidden">
+    <div class="card-title-bar px-3 pt-3 mb-0">
+        <div class="card-title-text">
+            <i class="fa-solid fa-circle-check text-success"></i>
+            <span>SUCCESSFULLY RESOLVED & CONTAINED FIELD INCIDENTS</span>
+        </div>
+        <span class="badge bg-success" style="font-size: 0.65rem;">Debrief Archive</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table-risk">
+            <thead>
+                <tr>
+                    <th>Incident ID</th>
+                    <th>Hazard Category</th>
+                    <th>Sector Location</th>
+                    <th>Resolution Description</th>
+                    <th>Resolution Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inc in resolved_incidents %}
+                <tr>
+                    <td class="font-monospace text-white fw-bold">{{ inc.incident_id }}</td>
+                    <td class="text-white">{{ inc.hazard }}</td>
+                    <td class="text-secondary">{{ inc.location }}</td>
+                    <td class="text-secondary" style="font-size: 0.76rem;">{{ inc.description }}</td>
+                    <td class="font-monospace text-muted" style="font-size: 0.72rem;">{{ inc.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

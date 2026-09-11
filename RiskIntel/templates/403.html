@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}403 — Clearance Denied{% endblock %}
+{% block header_title %}403 Clearance Forbidden{% endblock %}
+
+{% block content %}
+<div class="risk-card text-center py-5">
+    <div class="mb-3">
+        <i class="fa-solid fa-lock fa-4x text-danger"></i>
+    </div>
+    <h2 class="text-white fw-bold mb-2">403: SECURITY CLEARANCE RESTRICTION</h2>
+    <p class="text-secondary mb-4" style="max-width: 480px; margin: 0 auto; font-size: 0.85rem;">
+        Your current operator role (<strong>{{ session.get('role', 'VIEWER') }}</strong>) has insufficient clearance level to mutate or view this emergency command operation.
+    </p>
+    <div>
+        <a href="{{ url_for('dashboard_view') }}" class="btn btn-risk-primary">
+            <i class="fa-solid fa-house me-1"></i> Return to Command Center
+        </a>
+    </div>
+</div>
+{% endblock %}

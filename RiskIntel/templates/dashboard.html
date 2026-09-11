@@ -1,0 +1,401 @@
+{% extends "base.html" %}
+
+{% block title %}National Disaster Command Center{% endblock %}
+{% block header_title %}National Disaster Command Center{% endblock %}
+
+{% block content %}
+<!-- TOP STATS ROW (8 METRICS FROM DATABASE) -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3 col-xl">
+        <div class="stat-card">
+            <div class="stat-label">
+                <span>Monitored Lakes</span>
+                <i class="fa-solid fa-water text-primary"></i>
+            </div>
+            <div class="stat-value text-white">{{ total_lakes }}</div>
+            <div class="stat-footer text-muted">Himalayan / Central Asia</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+        <div class="stat-card" style="border-left: 3px solid #f97316;">
+            <div class="stat-label">
+                <span>High Risk</span>
+                <i class="fa-solid fa-triangle-exclamation text-warning"></i>
+            </div>
+            <div class="stat-value text-warning">{{ high_risk_lakes }}</div>
+            <div class="stat-footer text-warning">Level III Surveillance</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+        <div class="stat-card" style="border-left: 3px solid #ef4444;">
+            <div class="stat-label">
+                <span>Critical Risk</span>
+                <i class="fa-solid fa-circle-radiation text-danger"></i>
+            </div>
+            <div class="stat-value text-danger">{{ critical_risk_lakes }}</div>
+            <div class="stat-footer text-danger">Immediate Hazard Level</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+        <div class="stat-card">
+            <div class="stat-label">
+                <span>Active Alerts</span>
+                <i class="fa-solid fa-bell text-danger"></i>
+            </div>
+            <div class="stat-value text-white">{{ active_alerts }}</div>
+            <div class="stat-footer text-muted">Broadcast Dispatches</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+        <div class="stat-card">
+            <div class="stat-label">
+                <span>Active Incidents</span>
+                <i class="fa-solid fa-land-mine-on text-warning"></i>
+            </div>
+            <div class="stat-value text-white">{{ active_incidents }}</div>
+            <div class="stat-footer text-muted">On-ground Events</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+        <div class="stat-card">
+            <div class="stat-label">
+                <span>Affected Population</span>
+                <i class="fa-solid fa-users text-info"></i>
+            </div>
+            <div class="stat-value text-info">{{ "{:,}".format(affected_pop) }}</div>
+            <div class="stat-footer text-muted">Estimated Direct Risk</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+        <div class="stat-card">
+            <div class="stat-label">
+                <span>Available Shelters</span>
+                <i class="fa-solid fa-tents text-success"></i>
+            </div>
+            <div class="stat-value text-success">{{ available_shelter_slots }}</div>
+            <div class="stat-footer text-muted">Bed capacity open</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+        <div class="stat-card">
+            <div class="stat-label">
+                <span>Active Rescue</span>
+                <i class="fa-solid fa-truck-medical text-primary"></i>
+            </div>
+            <div class="stat-value text-white">{{ active_teams }}</div>
+            <div class="stat-footer text-muted">Teams Deployed</div>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN MAP & THREAT OVERVIEW SECTION -->
+<div class="row g-3 mb-4">
+    <!-- LIVE INTELLIGENCE MAP -->
+    <div class="col-xl-8">
+        <div class="risk-card h-100 p-0 overflow-hidden d-flex flex-column">
+            <div class="card-title-bar px-3 pt-3 mb-0">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-crosshairs text-danger"></i>
+                    <span>LIVE INTELLIGENCE MAP — MULTI-LAYER GLOF HAZARDS</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-dark border border-secondary text-secondary">OpenStreetMap Imagery</span>
+                    <a href="{{ url_for('map_view') }}" class="btn btn-sm btn-risk-outline py-1">
+                        <i class="fa-solid fa-expand me-1"></i> Full GIS
+                    </a>
+                </div>
+            </div>
+            <div id="command-map" style="flex: 1; min-height: 440px;"></div>
+            <div class="px-3 py-2 border-top border-secondary bg-dark d-flex flex-wrap align-items-center justify-content-between text-muted" style="font-size: 0.72rem;">
+                <div class="d-flex align-items-center gap-3">
+                    <span><i class="fa-solid fa-circle text-success me-1"></i> Low Risk</span>
+                    <span><i class="fa-solid fa-circle text-warning me-1"></i> Moderate Risk</span>
+                    <span><i class="fa-solid fa-circle text-warning-emphasis me-1" style="color: #f97316;"></i> High Risk</span>
+                    <span><i class="fa-solid fa-circle text-danger me-1"></i> Critical Risk</span>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <span><i class="fa-solid fa-square-person-walking text-primary me-1"></i> Shelter</span>
+                    <span><i class="fa-solid fa-truck-medical text-info me-1"></i> Rescue Team</span>
+                    <span><i class="fa-solid fa-triangle-exclamation text-danger me-1"></i> Incident</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- THREAT OVERVIEW & RISK TREND -->
+    <div class="col-xl-4">
+        <div class="risk-card mb-3">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-arrow-trend-up text-danger"></i>
+                    <span>ELEVATED THREAT LAKES</span>
+                </div>
+                <span class="badge bg-danger" style="font-size: 0.65rem;">Top Priority</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table-risk">
+                    <thead>
+                        <tr>
+                            <th>Lake</th>
+                            <th>Risk Score</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for l in threat_lakes %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('lake_detail_view', id=l.id) }}" class="fw-bold text-white">
+                                    {{ l.name }}
+                                </a>
+                                <div class="text-muted" style="font-size: 0.68rem;">{{ l.location }}</div>
+                            </td>
+                            <td>
+                                <span class="badge-risk badge-risk-{{ l.risk_level.lower() }}">
+                                    {{ l.risk_score }} / {{ l.risk_level }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="text-secondary font-monospace" style="font-size: 0.72rem;">{{ l.status }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="risk-card">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-chart-area text-info"></i>
+                    <span>HAZARD SEVERITY DISTRIBUTION</span>
+                </div>
+                <span class="text-muted" style="font-size: 0.7rem;">Real-time</span>
+            </div>
+            <div style="height: 180px; position: relative;">
+                <canvas id="riskDistributionChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LOWER SECTION: ALERTS, INCIDENTS, RESCUE, SHELTERS, RESOURCES -->
+<div class="row g-3">
+    <!-- ACTIVE ALERTS -->
+    <div class="col-lg-6 col-xl-4">
+        <div class="risk-card h-100">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-bell text-danger"></i>
+                    <span>ACTIVE EMERGENCY ALERTS</span>
+                </div>
+                <a href="{{ url_for('alerts_view') }}" class="btn btn-sm btn-risk-outline py-0 px-2" style="font-size: 0.72rem;">All Alerts</a>
+            </div>
+            <div class="alert-list">
+                {% for a in recent_alerts %}
+                <div class="p-2 mb-2 rounded border border-secondary" style="background: rgba(15, 23, 42, 0.6);">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-bold text-white" style="font-size: 0.8rem;">{{ a.hazard }}</span>
+                        <span class="badge-risk badge-risk-{{ a.severity.lower() }}">{{ a.severity }}</span>
+                    </div>
+                    <div class="text-muted mb-1" style="font-size: 0.72rem;">
+                        <i class="fa-solid fa-location-dot me-1"></i> {{ a.location }}
+                    </div>
+                    <div class="text-secondary" style="font-size: 0.74rem;">{{ a.message }}</div>
+                    <div class="d-flex justify-content-between align-items-center mt-2 pt-1 border-top border-dark" style="font-size: 0.68rem;">
+                        <span class="text-muted font-monospace">{{ a.alert_id }}</span>
+                        <span class="badge {% if a.status == 'ACTIVE' %}bg-success{% elif a.status == 'PENDING APPROVAL' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                            {{ a.status }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ACTIVE INCIDENTS -->
+    <div class="col-lg-6 col-xl-4">
+        <div class="risk-card h-100">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-triangle-exclamation text-warning"></i>
+                    <span>INCIDENT TIMELINE</span>
+                </div>
+                <a href="{{ url_for('incidents_view') }}" class="btn btn-sm btn-risk-outline py-0 px-2" style="font-size: 0.72rem;">Manage</a>
+            </div>
+            <div class="incident-timeline">
+                {% for inc in recent_incidents %}
+                <div class="d-flex gap-2 mb-3">
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="rounded-circle p-1" style="background: {% if inc.severity == 'CRITICAL' %}#ef4444{% elif inc.severity == 'HIGH' %}#f97316{% else %}#3b82f6{% endif %}; width: 10px; height: 10px;"></div>
+                        <div class="flex-grow-1 border-start border-secondary my-1"></div>
+                    </div>
+                    <div class="flex-grow-1 pb-1">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-white fw-bold" style="font-size: 0.8rem;">{{ inc.incident_id }} — {{ inc.hazard }}</span>
+                            <span class="badge bg-dark border border-secondary text-secondary" style="font-size: 0.65rem;">{{ inc.status }}</span>
+                        </div>
+                        <div class="text-muted" style="font-size: 0.7rem;">{{ inc.location }}</div>
+                        <div class="text-secondary" style="font-size: 0.72rem;">{{ inc.description }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- SHELTER & RESOURCE CAPACITY -->
+    <div class="col-lg-12 col-xl-4">
+        <!-- Shelter Capacity -->
+        <div class="risk-card mb-3">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-tents text-success"></i>
+                    <span>SHELTER CAPACITY TRACKER</span>
+                </div>
+                <a href="{{ url_for('shelters_view') }}" class="btn btn-sm btn-risk-outline py-0 px-2" style="font-size: 0.72rem;">Details</a>
+            </div>
+            {% for s in shelters[:4] %}
+            {% set pct = (s.occupied / s.capacity * 100) if s.capacity > 0 else 0 %}
+            <div class="mb-2">
+                <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 0.75rem;">
+                    <span class="text-white fw-semibold">{{ s.name }}</span>
+                    <span class="text-muted">{{ s.occupied }} / {{ s.capacity }} ({{ pct|round(1) }}%)</span>
+                </div>
+                <div class="progress" style="height: 6px; background: #0c1424;">
+                    <div class="progress-bar {% if pct > 90 %}bg-danger{% elif pct > 75 %}bg-warning{% else %}bg-success{% endif %}" 
+                         role="progressbar" style="width: {{ pct }}%;"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Relief Resource Shortages -->
+        <div class="risk-card">
+            <div class="card-title-bar">
+                <div class="card-title-text">
+                    <i class="fa-solid fa-boxes-stacked text-warning"></i>
+                    <span>RELIEF RESOURCE SHORTAGES</span>
+                </div>
+                <a href="{{ url_for('resources_view') }}" class="btn btn-sm btn-risk-outline py-0 px-2" style="font-size: 0.72rem;">Stock</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table-risk">
+                    <thead>
+                        <tr>
+                            <th>Resource</th>
+                            <th>Req / Avail</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in resources[:4] %}
+                        {% set shortage = r.required - (r.available + r.allocated) %}
+                        <tr>
+                            <td class="text-white fw-semibold">{{ r.name }}</td>
+                            <td class="font-monospace text-secondary" style="font-size: 0.75rem;">
+                                {{ r.required }} / {{ r.available }}
+                            </td>
+                            <td>
+                                {% if shortage > 0 %}
+                                <span class="badge bg-danger" style="font-size: 0.65rem;">-{{ shortage }} SHORTAGE</span>
+                                {% else %}
+                                <span class="badge bg-success" style="font-size: 0.65rem;">SUFFICIENT</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Initialize Dashboard Leaflet Map
+    const map = L.map('command-map').setView([27.915, 88.204], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 14
+    }).addTo(map);
+
+    // Fetch live dashboard geo elements via API
+    fetch('/api/dashboard')
+        .then(res => res.json())
+        .then(data => {
+            // Add Lakes
+            data.lakes.forEach(l => {
+                const color = getRiskColor(l.risk_level);
+                const marker = L.marker([l.latitude, l.longitude], {
+                    icon: getCustomMarkerIcon(color, 'fa-solid fa-water')
+                }).addTo(map);
+
+                marker.bindPopup(`
+                    <div style="font-size: 0.8rem; line-height: 1.4;">
+                        <strong style="color: #60a5fa; font-size: 0.9rem;">${l.name}</strong><br>
+                        <span class="text-muted">${l.location}</span><hr style="margin: 6px 0; border-color: #334155;">
+                        <div>Elevation: <strong>${l.elevation} m</strong></div>
+                        <div>Water Level: <strong>${l.water_level} m</strong></div>
+                        <div>Risk: <strong style="color: ${color}">${l.risk_score} (${l.risk_level})</strong></div>
+                        <div class="mt-2">
+                            <a href="/lake/${l.id}" class="btn btn-sm btn-primary py-0 px-2 text-white" style="font-size: 0.72rem;">Inspect Lake</a>
+                        </div>
+                    </div>
+                `);
+            });
+
+            // Add Shelters
+            data.shelters.forEach(s => {
+                const marker = L.marker([s.latitude, s.longitude], {
+                    icon: getCustomMarkerIcon('#3b82f6', 'fa-solid fa-tents')
+                }).addTo(map);
+                marker.bindPopup(`
+                    <div style="font-size: 0.8rem;">
+                        <strong style="color: #93c5fd;">${s.name}</strong><br>
+                        <span>Capacity: ${s.occupied} / ${s.capacity}</span><br>
+                        <span class="badge bg-secondary">${s.status}</span>
+                    </div>
+                `);
+            });
+
+            // Adjust bounds if points present
+            if (data.lakes.length > 0) {
+                const group = new L.featureGroup(data.lakes.map(l => L.marker([l.latitude, l.longitude])));
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        });
+
+    // 2. Hazard Severity Distribution Doughnut Chart
+    const ctx = document.getElementById('riskDistributionChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Low', 'Moderate', 'High', 'Critical'],
+            datasets: [{
+                data: [{{ total_lakes - high_risk_lakes - critical_risk_lakes }}, 4, {{ high_risk_lakes }}, {{ critical_risk_lakes }}],
+                backgroundColor: ['#10b981', '#f59e0b', '#f97316', '#ef4444'],
+                borderColor: '#182235',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: { color: '#94a3b8', font: { size: 11 } }
+                }
+            },
+            cutout: '70%'
+        }
+    });
+});
+</script>
+{% endblock %}
